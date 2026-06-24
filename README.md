@@ -12,6 +12,7 @@ Repository: https://github.com/liuguoqiang0730-svg/CodexFloatingBar
 - Single-instance guard to avoid duplicate floating bars and tray icons
 - Close button hides the window to tray; tray menu can show or hide it
 - Reads `C:\Users\ehang\.codex\config.toml` for `model` and `model_reasoning_effort`
+- Shows local Windows user and Codex auth mode without reading token values
 - Optionally reads today's API cost and token usage when `OPENAI_ADMIN_API_KEY` is set
 - Surfaces missing, inaccessible, or temporarily unreadable config files in the bar
 - Tray menu can copy the current visible status to the clipboard

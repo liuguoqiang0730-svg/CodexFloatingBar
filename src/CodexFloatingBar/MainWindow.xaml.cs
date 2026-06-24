@@ -8,6 +8,7 @@ namespace CodexFloatingBar;
 public partial class MainWindow : Window
 {
     private static readonly string ConfigPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex", "config.toml");
+    private readonly CodexAccountService _accountService = new();
     private readonly CodexConfigService _configService = new();
     private readonly OpenAiUsageService _usageService = new();
     private readonly WindowPlacementService _placementService = new();
@@ -23,6 +24,7 @@ public partial class MainWindow : Window
 
         Loaded += (_, _) =>
         {
+            UpdateAccountIdentity();
             UpdateStatus();
             StartWatcher();
         };
@@ -63,6 +65,7 @@ public partial class MainWindow : Window
         var status = string.Join(
             Environment.NewLine,
             TitleText.Text,
+            AccountText.Text,
             ModelText.Text,
             StateText.Text,
             ConfigText.Text,
@@ -108,8 +111,14 @@ public partial class MainWindow : Window
 
     private void RefreshClicked(object sender, RoutedEventArgs e) => UpdateStatus();
 
+    private void UpdateAccountIdentity()
+    {
+        AccountText.Text = _accountService.Read().DisplayText;
+    }
+
     private async void UpdateStatus()
     {
+        UpdateAccountIdentity();
         var usageRefreshVersion = Interlocked.Increment(ref _usageRefreshVersion);
         var result = _configService.Read(ConfigPath);
         if (!result.Exists)

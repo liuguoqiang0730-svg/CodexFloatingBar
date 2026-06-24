@@ -86,6 +86,7 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
                 <Border Width="34" Height="34" CornerRadius="9" Background="#22359764" BorderBrush="#55359764" BorderThickness="1">
@@ -97,7 +98,23 @@
                     <TextBlock x:Name="ModelText" Foreground="#CCFFFFFF" FontSize="12" Margin="0,2,0,0" TextTrimming="CharacterEllipsis" />
                 </StackPanel>
 
-                <Button Grid.Column="2" Content="↻" ToolTip="刷新" Click="RefreshClicked" />
+                <Border Grid.Column="2"
+                        Height="30"
+                        CornerRadius="8"
+                        Background="#151FFFFFF"
+                        BorderBrush="#22FFFFFF"
+                        BorderThickness="1"
+                        Padding="10,0"
+                        Margin="0,0,8,0"
+                        VerticalAlignment="Center">
+                    <TextBlock x:Name="AccountText"
+                               Foreground="#D7FFFFFF"
+                               FontSize="12"
+                               VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis" />
+                </Border>
+
+                <Button Grid.Column="3" Content="↻" ToolTip="刷新" Click="RefreshClicked" />
             </Grid>
 
             <Grid Grid.Row="2">
