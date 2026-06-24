@@ -8,6 +8,8 @@ namespace CodexFloatingBar;
 
 internal sealed class TrayService : IDisposable
 {
+    private const string GitHubRepositoryUrl = "https://github.com/liuguoqiang0730-svg/CodexFloatingBar";
+
     private readonly NotifyIcon _notifyIcon;
     private readonly MainWindow _window;
 
@@ -20,6 +22,7 @@ internal sealed class TrayService : IDisposable
         menu.Items.Add("打开配置文件", null, (_, _) => OpenConfig());
         menu.Items.Add("打开 ChatGPT 账户页", null, (_, _) => OpenUrl("https://chatgpt.com"));
         menu.Items.Add("打开 Billing 页面", null, (_, _) => OpenUrl("https://platform.openai.com/account/billing/overview"));
+        menu.Items.Add("打开 GitHub 仓库", null, (_, _) => OpenUrl(GitHubRepositoryUrl));
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add("退出", null, (_, _) => InvokeOnUi(() => System.Windows.Application.Current.Shutdown()));
 
