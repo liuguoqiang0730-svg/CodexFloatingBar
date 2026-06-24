@@ -12,6 +12,7 @@ Repository: https://github.com/liuguoqiang0730-svg/CodexFloatingBar
 - Single-instance guard to avoid duplicate floating bars and tray icons
 - Close button hides the window to tray; tray menu can show or hide it
 - Reads `C:\Users\ehang\.codex\config.toml` for `model` and `model_reasoning_effort`
+- Optionally reads today's API cost and token usage when `OPENAI_ADMIN_API_KEY` is set
 - Surfaces missing, inaccessible, or temporarily unreadable config files in the bar
 - Tray menu can copy the current visible status to the clipboard
 - Manual refresh plus file change monitoring
@@ -19,6 +20,7 @@ Repository: https://github.com/liuguoqiang0730-svg/CodexFloatingBar
 
 ## Notes
 - Balance, quota, and expiry are shown as manual-check only because there is no stable local read for them.
+- API usage/cost uses OpenAI Admin API endpoints and requires an Admin API key in `OPENAI_ADMIN_API_KEY`.
 - Window placement is stored under `%LOCALAPPDATA%\CodexFloatingBar\window-placement.json`.
 - Startup is stored under `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`.
 

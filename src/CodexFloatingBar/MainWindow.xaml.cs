@@ -9,6 +9,7 @@ public partial class MainWindow : Window
 {
     private static readonly string ConfigPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex", "config.toml");
     private readonly CodexConfigService _configService = new();
+    private readonly OpenAiUsageService _usageService = new();
     private readonly WindowPlacementService _placementService = new();
     private readonly DispatcherTimer _debounceTimer;
     private FileSystemWatcher? _watcher;
@@ -106,7 +107,7 @@ public partial class MainWindow : Window
 
     private void RefreshClicked(object sender, RoutedEventArgs e) => UpdateStatus();
 
-    private void UpdateStatus()
+    private async void UpdateStatus()
     {
         var result = _configService.Read(ConfigPath);
         if (!result.Exists)
@@ -115,6 +116,7 @@ public partial class MainWindow : Window
             StateText.Text = "登录/配置: 需手动查看";
             ConfigText.Text = "推理强度/速率: 需手动查看；套餐/余额/额度/到期: 官方未提供稳定本地读取";
             ManualText.Text = result.Message;
+            await UpdateUsageAsync();
             return;
         }
 
@@ -124,13 +126,21 @@ public partial class MainWindow : Window
             StateText.Text = "登录/配置: 本地配置读取失败";
             ConfigText.Text = "推理强度/速率: 暂不可用；套餐/余额/额度/到期: 官方未提供稳定本地读取";
             ManualText.Text = result.Message;
+            await UpdateUsageAsync();
             return;
         }
 
         ModelText.Text = $"model: {result.Model ?? "未配置"}";
         StateText.Text = $"推理强度/速率: {result.ReasoningEffort ?? "未配置"}  |  登录/配置: 已读取本地配置";
-        ConfigText.Text = "套餐/余额/额度/到期: 需手动查看/官方未提供稳定本地读取";
+        ConfigText.Text = "API 用量: 正在读取；余额/ChatGPT 额度需手动查看";
         ManualText.Text = $"配置文件: {ConfigPath}  |  最近刷新: {DateTime.Now:yyyy-MM-dd HH:mm:ss}";
+        await UpdateUsageAsync();
+    }
+
+    private async Task UpdateUsageAsync()
+    {
+        var usage = await _usageService.ReadTodayAsync();
+        ConfigText.Text = usage.Message;
     }
 
     private void StartWatcher()
