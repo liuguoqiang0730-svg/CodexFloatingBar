@@ -8,6 +8,7 @@ Repository: https://github.com/liuguoqiang0730-svg/CodexFloatingBar
 - Borderless, small, topmost, draggable window
 - Remembers the last window position
 - Optional current-user startup toggle from the tray menu
+- Single-instance guard to avoid duplicate floating bars and tray icons
 - Close button hides the window to tray; tray menu can show or hide it
 - Reads `C:\Users\ehang\.codex\config.toml` for `model` and `model_reasoning_effort`
 - Surfaces missing, inaccessible, or temporarily unreadable config files in the bar
