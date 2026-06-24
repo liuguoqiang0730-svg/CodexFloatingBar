@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Windows;
@@ -16,6 +16,11 @@ internal sealed class TrayService : IDisposable
 
     private readonly NotifyIcon _notifyIcon;
     private readonly StartupService _startupService = new();
+    private readonly ToolStripMenuItem _darkThemeMenuItem;
+    private readonly ToolStripMenuItem _lightThemeMenuItem;
+    private readonly ToolStripMenuItem _scaleSmallMenuItem;
+    private readonly ToolStripMenuItem _scaleNormalMenuItem;
+    private readonly ToolStripMenuItem _scaleLargeMenuItem;
     private readonly ToolStripMenuItem _startupMenuItem;
     private readonly MainWindow _window;
 
@@ -34,6 +39,28 @@ internal sealed class TrayService : IDisposable
         menu.Items.Add("打开 API Keys 页面", null, (_, _) => OpenUrl(ApiKeysUrl));
         menu.Items.Add("打开 GitHub 仓库", null, (_, _) => OpenUrl(GitHubRepositoryUrl));
         menu.Items.Add(new ToolStripSeparator());
+
+        var themeMenu = new ToolStripMenuItem("配色");
+        _darkThemeMenuItem = new ToolStripMenuItem("黑色色调");
+        _darkThemeMenuItem.Click += (_, _) => InvokeOnUi(() => _window.SetTheme(AppearanceTheme.Dark));
+        _lightThemeMenuItem = new ToolStripMenuItem("灰白色色调");
+        _lightThemeMenuItem.Click += (_, _) => InvokeOnUi(() => _window.SetTheme(AppearanceTheme.Light));
+        themeMenu.DropDownItems.Add(_darkThemeMenuItem);
+        themeMenu.DropDownItems.Add(_lightThemeMenuItem);
+        menu.Items.Add(themeMenu);
+
+        var scaleMenu = new ToolStripMenuItem("缩放");
+        _scaleSmallMenuItem = new ToolStripMenuItem("小 90%");
+        _scaleSmallMenuItem.Click += (_, _) => InvokeOnUi(() => _window.SetScale(0.9));
+        _scaleNormalMenuItem = new ToolStripMenuItem("标准 100%");
+        _scaleNormalMenuItem.Click += (_, _) => InvokeOnUi(() => _window.SetScale(1.0));
+        _scaleLargeMenuItem = new ToolStripMenuItem("大 110%");
+        _scaleLargeMenuItem.Click += (_, _) => InvokeOnUi(() => _window.SetScale(1.1));
+        scaleMenu.DropDownItems.Add(_scaleSmallMenuItem);
+        scaleMenu.DropDownItems.Add(_scaleNormalMenuItem);
+        scaleMenu.DropDownItems.Add(_scaleLargeMenuItem);
+        menu.Items.Add(scaleMenu);
+
         _startupMenuItem = new ToolStripMenuItem("开机自启动")
         {
             CheckOnClick = false,
@@ -43,7 +70,7 @@ internal sealed class TrayService : IDisposable
         menu.Items.Add(_startupMenuItem);
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add("退出", null, (_, _) => InvokeOnUi(ExitApplication));
-        menu.Opening += (_, _) => _startupMenuItem.Checked = _startupService.IsEnabled();
+        menu.Opening += (_, _) => SyncMenuChecks();
 
         _notifyIcon = new NotifyIcon
         {
@@ -60,6 +87,16 @@ internal sealed class TrayService : IDisposable
     }
 
     private static void OpenUrl(string url) => Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+
+    private void SyncMenuChecks()
+    {
+        _startupMenuItem.Checked = _startupService.IsEnabled();
+        _darkThemeMenuItem.Checked = _window.CurrentTheme == AppearanceTheme.Dark;
+        _lightThemeMenuItem.Checked = _window.CurrentTheme == AppearanceTheme.Light;
+        _scaleSmallMenuItem.Checked = Math.Abs(_window.CurrentScale - 0.9) < 0.001;
+        _scaleNormalMenuItem.Checked = Math.Abs(_window.CurrentScale - 1.0) < 0.001;
+        _scaleLargeMenuItem.Checked = Math.Abs(_window.CurrentScale - 1.1) < 0.001;
+    }
 
     private void CopyStatus()
     {

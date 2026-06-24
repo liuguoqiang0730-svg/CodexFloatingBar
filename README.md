@@ -6,7 +6,8 @@ Repository: https://github.com/liuguoqiang0730-svg/CodexFloatingBar
 
 ## MVP features
 - Borderless, small, topmost, draggable window
-- Compact status-panel UI with grouped config, runtime, and account sections
+- Slim status-bar UI with grouped config, runtime, and account sections
+- Switchable dark and gray-white themes with persisted scale options
 - Remembers the last window position
 - Optional current-user startup toggle from the tray menu
 - Single-instance guard to avoid duplicate floating bars and tray icons
@@ -23,6 +24,7 @@ Repository: https://github.com/liuguoqiang0730-svg/CodexFloatingBar
 - Balance, quota, and expiry are shown as manual-check only because there is no stable local read for them.
 - API usage/cost uses OpenAI Admin API endpoints and requires an Admin API key in `OPENAI_ADMIN_API_KEY`.
 - Window placement is stored under `%LOCALAPPDATA%\CodexFloatingBar\window-placement.json`.
+- Appearance is stored under `%LOCALAPPDATA%\CodexFloatingBar\appearance.json`.
 - Startup is stored under `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`.
 
 ## Run

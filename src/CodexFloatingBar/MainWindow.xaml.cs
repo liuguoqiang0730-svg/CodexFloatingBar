@@ -1,6 +1,7 @@
-﻿using System.IO;
+using System.IO;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Threading;
 
 namespace CodexFloatingBar;
@@ -9,17 +10,21 @@ public partial class MainWindow : Window
 {
     private static readonly string ConfigPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex", "config.toml");
     private readonly CodexAccountService _accountService = new();
+    private readonly AppearanceService _appearanceService = new();
     private readonly CodexConfigService _configService = new();
     private readonly OpenAiUsageService _usageService = new();
     private readonly WindowPlacementService _placementService = new();
     private readonly DispatcherTimer _debounceTimer;
     private FileSystemWatcher? _watcher;
+    private AppearanceSettings _appearanceSettings = AppearanceSettings.Default;
     private int _usageRefreshVersion;
     private bool _allowClose;
 
     public MainWindow()
     {
         InitializeComponent();
+        _appearanceSettings = _appearanceService.Read();
+        ApplyAppearance();
         _placementService.Restore(this);
 
         Loaded += (_, _) =>
@@ -56,9 +61,28 @@ public partial class MainWindow : Window
         };
     }
 
+    internal AppearanceTheme CurrentTheme => _appearanceSettings.Theme;
+
+    public double CurrentScale => _appearanceSettings.Scale;
+
     public void RefreshStatus() => UpdateStatus();
 
     public void AllowClose() => _allowClose = true;
+
+    internal void SetTheme(AppearanceTheme theme)
+    {
+        _appearanceSettings = _appearanceSettings with { Theme = theme };
+        _appearanceService.Save(_appearanceSettings);
+        ApplyAppearance();
+    }
+
+    public void SetScale(double scale)
+    {
+        _appearanceSettings = _appearanceSettings with { Scale = Math.Clamp(scale, 0.82, 1.18) };
+        _appearanceService.Save(_appearanceSettings);
+        ApplyAppearance();
+        _placementService.Save(this);
+    }
 
     public bool CopyStatusToClipboard()
     {
@@ -110,6 +134,79 @@ public partial class MainWindow : Window
     }
 
     private void RefreshClicked(object sender, RoutedEventArgs e) => UpdateStatus();
+
+    private void ApplyAppearance()
+    {
+        Width = 560 * _appearanceSettings.Scale;
+        Height = 92 * _appearanceSettings.Scale;
+        MinWidth = Width;
+        MinHeight = Height;
+        Shell.LayoutTransform = new ScaleTransform(_appearanceSettings.Scale, _appearanceSettings.Scale);
+
+        if (_appearanceSettings.Theme == AppearanceTheme.Light)
+        {
+            ApplyTheme(
+                surface: "#F4F7F8FA",
+                border: "#33000000",
+                card: "#FFFFFFFF",
+                cardBorder: "#1F000000",
+                primaryText: "#FF1E252E",
+                secondaryText: "#D91E252E",
+                mutedText: "#8C1E252E",
+                badge: "#0F000000",
+                logo: "#18359764",
+                logoBorder: "#38359764",
+                logoText: "#FF2F7D52");
+            return;
+        }
+
+        ApplyTheme(
+            surface: "#F20F1216",
+            border: "#2EFFFFFF",
+            card: "#181D23",
+            cardBorder: "#22FFFFFF",
+            primaryText: "#FFFFFFFF",
+            secondaryText: "#D8FFFFFF",
+            mutedText: "#98FFFFFF",
+            badge: "#1FFFFFFF",
+            logo: "#22359764",
+            logoBorder: "#55359764",
+            logoText: "#FF7DE3B2");
+    }
+
+    private void ApplyTheme(
+        string surface,
+        string border,
+        string card,
+        string cardBorder,
+        string primaryText,
+        string secondaryText,
+        string mutedText,
+        string badge,
+        string logo,
+        string logoBorder,
+        string logoText)
+    {
+        SetBrush("SurfaceBrush", surface);
+        SetBrush("BorderBrushToken", border);
+        SetBrush("CardBrush", card);
+        SetBrush("CardBorderBrush", cardBorder);
+        SetBrush("PrimaryTextBrush", primaryText);
+        SetBrush("SecondaryTextBrush", secondaryText);
+        SetBrush("MutedTextBrush", mutedText);
+        SetBrush("AccentBrush", "#2F7D52");
+        SetBrush("AccentHoverBrush", "#359764");
+        SetBrush("AccentPressedBrush", "#256A45");
+        SetBrush("BadgeBrush", badge);
+        SetBrush("LogoBrush", logo);
+        SetBrush("LogoBorderBrush", logoBorder);
+        SetBrush("LogoTextBrush", logoText);
+    }
+
+    private void SetBrush(string key, string color)
+    {
+        Resources[key] = new SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(color));
+    }
 
     private void UpdateAccountIdentity()
     {
