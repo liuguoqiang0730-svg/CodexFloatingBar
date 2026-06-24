@@ -6,6 +6,7 @@ Repository: https://github.com/liuguoqiang0730-svg/CodexFloatingBar
 
 ## MVP features
 - Borderless, small, topmost, draggable window
+- Compact status-panel UI with grouped config, runtime, and account sections
 - Remembers the last window position
 - Optional current-user startup toggle from the tray menu
 - Single-instance guard to avoid duplicate floating bars and tray icons
