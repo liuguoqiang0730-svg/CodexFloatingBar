@@ -16,7 +16,7 @@ Repository: https://github.com/liuguoqiang0730-svg/CodexFloatingBar
 - Surfaces missing, inaccessible, or temporarily unreadable config files in the bar
 - Tray menu can copy the current visible status to the clipboard
 - Manual refresh plus file change monitoring
-- Tray menu: refresh, copy current status, show/hide window, open config, open ChatGPT account page, open Billing page, open GitHub repository, startup toggle, exit
+- Tray menu: refresh, copy current status, show/hide window, open config, open ChatGPT account page, open Billing/API usage/API Keys pages, open GitHub repository, startup toggle, exit
 
 ## Notes
 - Balance, quota, and expiry are shown as manual-check only because there is no stable local read for them.

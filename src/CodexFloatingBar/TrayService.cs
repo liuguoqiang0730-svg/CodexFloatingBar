@@ -9,6 +9,10 @@ namespace CodexFloatingBar;
 internal sealed class TrayService : IDisposable
 {
     private const string GitHubRepositoryUrl = "https://github.com/liuguoqiang0730-svg/CodexFloatingBar";
+    private const string ChatGptUrl = "https://chatgpt.com";
+    private const string BillingUrl = "https://platform.openai.com/account/billing/overview";
+    private const string ApiUsageUrl = "https://platform.openai.com/usage";
+    private const string ApiKeysUrl = "https://platform.openai.com/settings/organization/admin-keys";
 
     private readonly NotifyIcon _notifyIcon;
     private readonly StartupService _startupService = new();
@@ -24,8 +28,10 @@ internal sealed class TrayService : IDisposable
         menu.Items.Add("复制当前状态", null, (_, _) => InvokeOnUi(CopyStatus));
         menu.Items.Add("显示/隐藏窗口", null, (_, _) => InvokeOnUi(() => _window.ToggleVisibilityFromTray()));
         menu.Items.Add("打开配置文件", null, (_, _) => OpenConfig());
-        menu.Items.Add("打开 ChatGPT 账户页", null, (_, _) => OpenUrl("https://chatgpt.com"));
-        menu.Items.Add("打开 Billing 页面", null, (_, _) => OpenUrl("https://platform.openai.com/account/billing/overview"));
+        menu.Items.Add("打开 ChatGPT 账户页", null, (_, _) => OpenUrl(ChatGptUrl));
+        menu.Items.Add("打开 Billing 页面", null, (_, _) => OpenUrl(BillingUrl));
+        menu.Items.Add("打开 API 用量页面", null, (_, _) => OpenUrl(ApiUsageUrl));
+        menu.Items.Add("打开 API Keys 页面", null, (_, _) => OpenUrl(ApiKeysUrl));
         menu.Items.Add("打开 GitHub 仓库", null, (_, _) => OpenUrl(GitHubRepositoryUrl));
         menu.Items.Add(new ToolStripSeparator());
         _startupMenuItem = new ToolStripMenuItem("开机自启动")
