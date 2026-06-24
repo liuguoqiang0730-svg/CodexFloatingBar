@@ -7,6 +7,7 @@ obj/
 *.cache
 *.log
 TestResults/
+artifacts/
 
 # IDE
 .idea/

@@ -30,3 +30,11 @@ C:\Users\ehang\AppData\Local\Microsoft\dotnet\dotnet.exe run --project .\src\Cod
 ```powershell
 C:\Users\ehang\AppData\Local\Microsoft\dotnet\dotnet.exe build .\CodexFloatingBar.sln
 ```
+
+## Publish
+
+```powershell
+.\scripts\publish.ps1
+```
+
+The default publish output is `artifacts\publish\win-x64`.
