@@ -11,6 +11,8 @@ internal sealed class TrayService : IDisposable
     private const string GitHubRepositoryUrl = "https://github.com/liuguoqiang0730-svg/CodexFloatingBar";
 
     private readonly NotifyIcon _notifyIcon;
+    private readonly StartupService _startupService = new();
+    private readonly ToolStripMenuItem _startupMenuItem;
     private readonly MainWindow _window;
 
     public TrayService(MainWindow window)
@@ -23,6 +25,10 @@ internal sealed class TrayService : IDisposable
         menu.Items.Add("打开 ChatGPT 账户页", null, (_, _) => OpenUrl("https://chatgpt.com"));
         menu.Items.Add("打开 Billing 页面", null, (_, _) => OpenUrl("https://platform.openai.com/account/billing/overview"));
         menu.Items.Add("打开 GitHub 仓库", null, (_, _) => OpenUrl(GitHubRepositoryUrl));
+        menu.Items.Add(new ToolStripSeparator());
+        _startupMenuItem = new ToolStripMenuItem("开机自启动") { Checked = _startupService.IsEnabled() };
+        _startupMenuItem.Click += (_, _) => ToggleStartup();
+        menu.Items.Add(_startupMenuItem);
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add("退出", null, (_, _) => InvokeOnUi(() => System.Windows.Application.Current.Shutdown()));
 
@@ -49,6 +55,17 @@ internal sealed class TrayService : IDisposable
     }
 
     private static void OpenUrl(string url) => Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+
+    private void ToggleStartup()
+    {
+        var enable = !_startupService.IsEnabled();
+        if (!_startupService.TrySetEnabled(enable, out var errorMessage))
+        {
+            System.Windows.MessageBox.Show(errorMessage ?? "修改开机自启动失败。", "CodexFloatingBar", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+
+        _startupMenuItem.Checked = _startupService.IsEnabled();
+    }
 
     private static void OpenConfig()
     {
