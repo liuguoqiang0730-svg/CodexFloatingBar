@@ -13,6 +13,7 @@ public partial class MainWindow : Window
     private readonly WindowPlacementService _placementService = new();
     private readonly DispatcherTimer _debounceTimer;
     private FileSystemWatcher? _watcher;
+    private int _usageRefreshVersion;
     private bool _allowClose;
 
     public MainWindow()
@@ -109,6 +110,7 @@ public partial class MainWindow : Window
 
     private async void UpdateStatus()
     {
+        var usageRefreshVersion = Interlocked.Increment(ref _usageRefreshVersion);
         var result = _configService.Read(ConfigPath);
         if (!result.Exists)
         {
@@ -116,7 +118,7 @@ public partial class MainWindow : Window
             StateText.Text = "登录/配置: 需手动查看";
             ConfigText.Text = "推理强度/速率: 需手动查看；套餐/余额/额度/到期: 官方未提供稳定本地读取";
             ManualText.Text = result.Message;
-            await UpdateUsageAsync();
+            await UpdateUsageAsync(usageRefreshVersion);
             return;
         }
 
@@ -126,7 +128,7 @@ public partial class MainWindow : Window
             StateText.Text = "登录/配置: 本地配置读取失败";
             ConfigText.Text = "推理强度/速率: 暂不可用；套餐/余额/额度/到期: 官方未提供稳定本地读取";
             ManualText.Text = result.Message;
-            await UpdateUsageAsync();
+            await UpdateUsageAsync(usageRefreshVersion);
             return;
         }
 
@@ -134,12 +136,17 @@ public partial class MainWindow : Window
         StateText.Text = $"推理强度/速率: {result.ReasoningEffort ?? "未配置"}  |  登录/配置: 已读取本地配置";
         ConfigText.Text = "API 用量: 正在读取；余额/ChatGPT 额度需手动查看";
         ManualText.Text = $"配置文件: {ConfigPath}  |  最近刷新: {DateTime.Now:yyyy-MM-dd HH:mm:ss}";
-        await UpdateUsageAsync();
+        await UpdateUsageAsync(usageRefreshVersion);
     }
 
-    private async Task UpdateUsageAsync()
+    private async Task UpdateUsageAsync(int refreshVersion)
     {
         var usage = await _usageService.ReadTodayAsync();
+        if (refreshVersion != _usageRefreshVersion)
+        {
+            return;
+        }
+
         ConfigText.Text = usage.Message;
     }
 
