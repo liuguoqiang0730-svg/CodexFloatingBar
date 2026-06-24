@@ -1,0 +1,17 @@
+﻿# build outputs
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.cache
+*.log
+TestResults/
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+Thumbs.db
+Desktop.ini
