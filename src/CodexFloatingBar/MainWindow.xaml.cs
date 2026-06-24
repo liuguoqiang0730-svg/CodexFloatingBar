@@ -9,12 +9,14 @@ public partial class MainWindow : Window
 {
     private static readonly string ConfigPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex", "config.toml");
     private readonly CodexConfigService _configService = new();
+    private readonly WindowPlacementService _placementService = new();
     private readonly DispatcherTimer _debounceTimer;
     private FileSystemWatcher? _watcher;
 
     public MainWindow()
     {
         InitializeComponent();
+        _placementService.Restore(this);
 
         Loaded += (_, _) =>
         {
@@ -27,10 +29,15 @@ public partial class MainWindow : Window
             if (e.ButtonState == MouseButtonState.Pressed)
             {
                 DragMove();
+                _placementService.Save(this);
             }
         };
 
-        Closing += (_, _) => _watcher?.Dispose();
+        Closing += (_, _) =>
+        {
+            _placementService.Save(this);
+            _watcher?.Dispose();
+        };
 
         _debounceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
         _debounceTimer.Tick += (_, _) =>
