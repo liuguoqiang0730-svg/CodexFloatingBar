@@ -21,6 +21,7 @@ internal sealed class TrayService : IDisposable
 
         var menu = new ContextMenuStrip();
         menu.Items.Add("刷新状态", null, (_, _) => InvokeOnUi(() => _window.RefreshStatus()));
+        menu.Items.Add("显示/隐藏窗口", null, (_, _) => InvokeOnUi(() => _window.ToggleVisibilityFromTray()));
         menu.Items.Add("打开配置文件", null, (_, _) => OpenConfig());
         menu.Items.Add("打开 ChatGPT 账户页", null, (_, _) => OpenUrl("https://chatgpt.com"));
         menu.Items.Add("打开 Billing 页面", null, (_, _) => OpenUrl("https://platform.openai.com/account/billing/overview"));
@@ -30,7 +31,7 @@ internal sealed class TrayService : IDisposable
         _startupMenuItem.Click += (_, _) => ToggleStartup();
         menu.Items.Add(_startupMenuItem);
         menu.Items.Add(new ToolStripSeparator());
-        menu.Items.Add("退出", null, (_, _) => InvokeOnUi(() => System.Windows.Application.Current.Shutdown()));
+        menu.Items.Add("退出", null, (_, _) => InvokeOnUi(ExitApplication));
 
         _notifyIcon = new NotifyIcon
         {
@@ -42,19 +43,17 @@ internal sealed class TrayService : IDisposable
 
         _notifyIcon.DoubleClick += (_, _) => InvokeOnUi(() =>
         {
-            if (!_window.IsVisible)
-            {
-                _window.Show();
-            }
-            _window.WindowState = WindowState.Normal;
-            _window.Activate();
-            _window.Topmost = true;
-            _window.Topmost = false;
-            _window.Topmost = true;
+            _window.ShowFromTray();
         });
     }
 
     private static void OpenUrl(string url) => Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+
+    private void ExitApplication()
+    {
+        _window.AllowClose();
+        System.Windows.Application.Current.Shutdown();
+    }
 
     private void ToggleStartup()
     {

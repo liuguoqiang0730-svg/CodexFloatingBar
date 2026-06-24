@@ -12,6 +12,7 @@ public partial class MainWindow : Window
     private readonly WindowPlacementService _placementService = new();
     private readonly DispatcherTimer _debounceTimer;
     private FileSystemWatcher? _watcher;
+    private bool _allowClose;
 
     public MainWindow()
     {
@@ -33,10 +34,14 @@ public partial class MainWindow : Window
             }
         };
 
-        Closing += (_, _) =>
+        Closing += (_, e) =>
         {
             _placementService.Save(this);
-            _watcher?.Dispose();
+            if (!_allowClose)
+            {
+                e.Cancel = true;
+                Hide();
+            }
         };
 
         _debounceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
@@ -48,6 +53,34 @@ public partial class MainWindow : Window
     }
 
     public void RefreshStatus() => UpdateStatus();
+
+    public void AllowClose() => _allowClose = true;
+
+    public void ShowFromTray()
+    {
+        if (!IsVisible)
+        {
+            Show();
+        }
+
+        WindowState = WindowState.Normal;
+        Activate();
+        Topmost = true;
+        Topmost = false;
+        Topmost = true;
+    }
+
+    public void ToggleVisibilityFromTray()
+    {
+        if (IsVisible)
+        {
+            _placementService.Save(this);
+            Hide();
+            return;
+        }
+
+        ShowFromTray();
+    }
 
     private void RefreshClicked(object sender, RoutedEventArgs e) => UpdateStatus();
 
@@ -97,4 +130,9 @@ public partial class MainWindow : Window
         });
     }
 
+    protected override void OnClosed(EventArgs e)
+    {
+        _watcher?.Dispose();
+        base.OnClosed(e);
+    }
 }
