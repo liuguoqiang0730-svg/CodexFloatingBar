@@ -27,11 +27,16 @@ internal sealed class TrayService : IDisposable
         menu.Items.Add("打开 Billing 页面", null, (_, _) => OpenUrl("https://platform.openai.com/account/billing/overview"));
         menu.Items.Add("打开 GitHub 仓库", null, (_, _) => OpenUrl(GitHubRepositoryUrl));
         menu.Items.Add(new ToolStripSeparator());
-        _startupMenuItem = new ToolStripMenuItem("开机自启动") { Checked = _startupService.IsEnabled() };
+        _startupMenuItem = new ToolStripMenuItem("开机自启动")
+        {
+            CheckOnClick = false,
+            Checked = _startupService.IsEnabled()
+        };
         _startupMenuItem.Click += (_, _) => ToggleStartup();
         menu.Items.Add(_startupMenuItem);
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add("退出", null, (_, _) => InvokeOnUi(ExitApplication));
+        menu.Opening += (_, _) => _startupMenuItem.Checked = _startupService.IsEnabled();
 
         _notifyIcon = new NotifyIcon
         {
