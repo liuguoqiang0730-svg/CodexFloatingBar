@@ -101,7 +101,7 @@
                 <Border Grid.Column="2"
                         Height="30"
                         CornerRadius="8"
-                        Background="#151FFFFFF"
+                        Background="#1FFFFFFF"
                         BorderBrush="#22FFFFFF"
                         BorderThickness="1"
                         Padding="10,0"
