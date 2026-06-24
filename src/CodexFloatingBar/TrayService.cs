@@ -21,6 +21,7 @@ internal sealed class TrayService : IDisposable
 
         var menu = new ContextMenuStrip();
         menu.Items.Add("刷新状态", null, (_, _) => InvokeOnUi(() => _window.RefreshStatus()));
+        menu.Items.Add("复制当前状态", null, (_, _) => InvokeOnUi(() => _window.CopyStatusToClipboard()));
         menu.Items.Add("显示/隐藏窗口", null, (_, _) => InvokeOnUi(() => _window.ToggleVisibilityFromTray()));
         menu.Items.Add("打开配置文件", null, (_, _) => OpenConfig());
         menu.Items.Add("打开 ChatGPT 账户页", null, (_, _) => OpenUrl("https://chatgpt.com"));

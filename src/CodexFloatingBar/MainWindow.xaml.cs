@@ -56,6 +56,26 @@ public partial class MainWindow : Window
 
     public void AllowClose() => _allowClose = true;
 
+    public void CopyStatusToClipboard()
+    {
+        var status = string.Join(
+            Environment.NewLine,
+            TitleText.Text,
+            ModelText.Text,
+            StateText.Text,
+            ConfigText.Text,
+            ManualText.Text);
+
+        try
+        {
+            System.Windows.Clipboard.SetText(status);
+        }
+        catch (Exception ex) when (ex is System.Runtime.InteropServices.ExternalException or ThreadStateException)
+        {
+            System.Windows.MessageBox.Show($"复制状态失败: {ex.Message}", "CodexFloatingBar", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
     public void ShowFromTray()
     {
         if (!IsVisible)
