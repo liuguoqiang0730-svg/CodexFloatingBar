@@ -10,6 +10,7 @@ Repository: https://github.com/liuguoqiang0730-svg/CodexFloatingBar
 - Optional current-user startup toggle from the tray menu
 - Close button hides the window to tray; tray menu can show or hide it
 - Reads `C:\Users\ehang\.codex\config.toml` for `model` and `model_reasoning_effort`
+- Surfaces missing, inaccessible, or temporarily unreadable config files in the bar
 - Manual refresh plus file change monitoring
 - Tray menu: refresh, show/hide window, open config, open ChatGPT account page, open Billing page, open GitHub repository, startup toggle, exit
 

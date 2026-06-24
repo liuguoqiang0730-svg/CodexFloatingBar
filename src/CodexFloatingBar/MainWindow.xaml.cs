@@ -96,6 +96,15 @@ public partial class MainWindow : Window
             return;
         }
 
+        if (!result.ReadSucceeded)
+        {
+            ModelText.Text = "model: 读取配置失败";
+            StateText.Text = "登录/配置: 本地配置读取失败";
+            ConfigText.Text = "推理强度/速率: 暂不可用；套餐/余额/额度/到期: 官方未提供稳定本地读取";
+            ManualText.Text = result.Message;
+            return;
+        }
+
         ModelText.Text = $"model: {result.Model ?? "未配置"}";
         StateText.Text = $"推理强度/速率: {result.ReasoningEffort ?? "未配置"}  |  登录/配置: 已读取本地配置";
         ConfigText.Text = "套餐/余额/额度/到期: 需手动查看/官方未提供稳定本地读取";

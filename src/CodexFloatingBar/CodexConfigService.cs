@@ -18,38 +18,51 @@ internal sealed class CodexConfigService
         string? model = null;
         string? effort = null;
 
-        foreach (var line in File.ReadLines(path))
+        try
         {
-            if (model is null)
+            foreach (var line in File.ReadLines(path))
             {
-                var match = ModelRegex.Match(line);
-                if (match.Success)
+                if (model is null)
                 {
-                    model = match.Groups["value"].Value;
-                    continue;
+                    var match = ModelRegex.Match(line);
+                    if (match.Success)
+                    {
+                        model = match.Groups["value"].Value;
+                        continue;
+                    }
                 }
-            }
 
-            if (effort is null)
-            {
-                var match = EffortRegex.Match(line);
-                if (match.Success)
+                if (effort is null)
                 {
-                    effort = match.Groups["value"].Value;
+                    var match = EffortRegex.Match(line);
+                    if (match.Success)
+                    {
+                        effort = match.Groups["value"].Value;
+                    }
                 }
-            }
 
-            if (model is not null && effort is not null)
-            {
-                break;
+                if (model is not null && effort is not null)
+                {
+                    break;
+                }
             }
         }
+        catch (UnauthorizedAccessException)
+        {
+            return ConfigReadResult.Failed($"没有权限读取配置文件: {path}");
+        }
+        catch (IOException ex)
+        {
+            return ConfigReadResult.Failed($"读取配置文件失败: {ex.Message}");
+        }
 
-        return new ConfigReadResult(true, model, effort, null);
+        return new ConfigReadResult(true, true, model, effort, null);
     }
 }
 
-internal sealed record ConfigReadResult(bool Exists, string? Model, string? ReasoningEffort, string? Message)
+internal sealed record ConfigReadResult(bool Exists, bool ReadSucceeded, string? Model, string? ReasoningEffort, string? Message)
 {
-    public static ConfigReadResult Missing(string message) => new(false, null, null, message);
+    public static ConfigReadResult Missing(string message) => new(false, false, null, null, message);
+
+    public static ConfigReadResult Failed(string message) => new(true, false, null, null, message);
 }
