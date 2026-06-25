@@ -13,6 +13,12 @@ internal sealed class CodexSessionStatusService
     private static readonly Regex TurnRegex = new(
         "turn\\{.*?model=(?<model>[^\\s}]+).*?codex\\.turn\\.reasoning_effort=(?<effort>[a-zA-Z_-]+)",
         RegexOptions.Compiled | RegexOptions.Singleline);
+    private static readonly Regex JsonServiceTierRegex = new(
+        "\"service_tier\"\\s*:\\s*(?:\"(?<tier>[^\"]+)\"|(?<tier>null))",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex LogServiceTierRegex = new(
+        "service_tier\\s*[=:]\\s*(?:Some\\((?<tier>[^)]+)\\)|(?<tier>[^\\s},]+))",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private static readonly string CodexHome = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex");
     private static readonly string[] LogPaths =
     [
@@ -56,9 +62,10 @@ internal sealed class CodexSessionStatusService
 
         var model = match.Groups["model"].Value.Trim().Trim('"');
         var effort = FormatEffort(match.Groups["effort"].Value);
-        return string.IsNullOrWhiteSpace(model) && string.IsNullOrWhiteSpace(effort)
+        var speedTier = FindLatestSpeedTier(text);
+        return string.IsNullOrWhiteSpace(model) && string.IsNullOrWhiteSpace(effort) && string.IsNullOrWhiteSpace(speedTier)
             ? null
-            : new CodexSessionStatus(model, effort);
+            : new CodexSessionStatus(model, effort, speedTier);
     }
 
     private static (int Index, Match? Match) FindLastMatch(Regex regex, string text)
@@ -119,9 +126,33 @@ internal sealed class CodexSessionStatusService
     {
         return effort.Trim().Trim('"').ToLowerInvariant();
     }
+
+    private static string? FindLatestSpeedTier(string text)
+    {
+        var json = FindLastMatch(JsonServiceTierRegex, text);
+        var log = FindLastMatch(LogServiceTierRegex, text);
+        var match = json.Index >= log.Index ? json.Match : log.Match;
+        if (match is null || !match.Success)
+        {
+            return null;
+        }
+
+        return FormatSpeedTier(match.Groups["tier"].Value);
+    }
+
+    private static string? FormatSpeedTier(string tier)
+    {
+        var normalized = tier.Trim().Trim('"').ToLowerInvariant();
+        return normalized switch
+        {
+            "" or "null" or "none" or "default" or "standard" or "auto" => "standard",
+            "priority" or "fast" => "fast",
+            _ => normalized
+        };
+    }
 }
 
-internal sealed record CodexSessionStatus(string? Model, string? ReasoningEffort)
+internal sealed record CodexSessionStatus(string? Model, string? ReasoningEffort, string? SpeedTier)
 {
-    public static CodexSessionStatus Unavailable { get; } = new(null, null);
+    public static CodexSessionStatus Unavailable { get; } = new(null, null, null);
 }

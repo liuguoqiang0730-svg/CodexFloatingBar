@@ -28,11 +28,13 @@ public partial class MainWindow : Window
     private readonly DispatcherTimer _liveRefreshTimer;
     private FileSystemWatcher? _configWatcher;
     private FileSystemWatcher? _rateLimitWatcher;
+    private FileSystemWatcher? _stateWatcher;
     private AppearanceSettings _appearanceSettings = AppearanceSettings.Default;
     private string? _configuredModel;
     private string? _configuredReasoningEffort;
     private string? _currentModel;
     private string? _currentReasoningEffort;
+    private string? _currentSpeedTier;
     private string _currentManualStatus = "读取中";
     private string _currentUsageStatus = "读取中";
     private int _refreshVersion;
@@ -358,13 +360,15 @@ public partial class MainWindow : Window
     {
         var model = string.IsNullOrWhiteSpace(session.Model) ? _configuredModel : session.Model;
         var effort = string.IsNullOrWhiteSpace(session.ReasoningEffort) ? _configuredReasoningEffort : session.ReasoningEffort;
-        SetSelectedStatus(model, effort);
+        var speedTier = string.IsNullOrWhiteSpace(session.SpeedTier) ? _currentSpeedTier : session.SpeedTier;
+        SetSelectedStatus(model, effort, speedTier);
     }
 
-    private void SetSelectedStatus(string? model, string? reasoningEffort)
+    private void SetSelectedStatus(string? model, string? reasoningEffort, string? speedTier = null)
     {
         _currentModel = model;
         _currentReasoningEffort = reasoningEffort;
+        _currentSpeedTier = speedTier;
         RenderSelectedStatus();
     }
 
@@ -391,7 +395,7 @@ public partial class MainWindow : Window
     {
         var model = DisplayValue(_currentModel, "未配置模型");
         var effort = DisplayValue(_currentReasoningEffort, "读取中");
-        const string speed = "默认";
+        var speed = FormatSpeedLabel(_currentSpeedTier);
 
         SetTextIfChanged(ModelText, $"{model} · 推理 {effort} · 速率 {speed}");
 
@@ -423,6 +427,15 @@ public partial class MainWindow : Window
         return string.IsNullOrWhiteSpace(value) ? fallback : value;
     }
 
+    private static string FormatSpeedLabel(string? speedTier)
+    {
+        return speedTier?.Trim().ToLowerInvariant() switch
+        {
+            "fast" or "priority" => "快速",
+            _ => "标准"
+        };
+    }
+
     private static void SetTextIfChanged(TextBlock textBlock, string text)
     {
         if (!string.Equals(textBlock.Text, text, StringComparison.Ordinal))
@@ -445,7 +458,7 @@ public partial class MainWindow : Window
         {
             _configuredModel = null;
             _configuredReasoningEffort = null;
-            SetSelectedStatus("未找到配置", null);
+            SetSelectedStatus("未找到配置", null, null);
             SetUsageStatus("读取中");
             SetManualStatus("未找到 config.toml");
             await UpdateUsageAsync(usageRefreshVersion);
@@ -456,7 +469,7 @@ public partial class MainWindow : Window
         {
             _configuredModel = null;
             _configuredReasoningEffort = null;
-            SetSelectedStatus("读取配置失败", null);
+            SetSelectedStatus("读取配置失败", null, null);
             SetUsageStatus("读取中");
             SetManualStatus(result.Message ?? "配置读取失败");
             await UpdateUsageAsync(usageRefreshVersion);
@@ -465,7 +478,7 @@ public partial class MainWindow : Window
 
         _configuredModel = result.Model;
         _configuredReasoningEffort = result.ReasoningEffort;
-        SetSelectedStatus(result.Model, result.ReasoningEffort);
+        SetSelectedStatus(result.Model, result.ReasoningEffort, null);
         SetUsageStatus("读取中");
         SetManualStatus($"config.toml | {DateTime.Now:HH:mm:ss}");
         await UpdateUsageAsync(usageRefreshVersion);
@@ -516,6 +529,16 @@ public partial class MainWindow : Window
         _rateLimitWatcher.Changed += (_, _) => DebounceLiveRefresh();
         _rateLimitWatcher.Created += (_, _) => DebounceLiveRefresh();
         _rateLimitWatcher.Renamed += (_, _) => DebounceLiveRefresh();
+
+        _stateWatcher = new FileSystemWatcher(CodexHomePath, "state_5.sqlite*")
+        {
+            NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size | NotifyFilters.FileName | NotifyFilters.CreationTime,
+            EnableRaisingEvents = true
+        };
+
+        _stateWatcher.Changed += (_, _) => DebounceLiveRefresh();
+        _stateWatcher.Created += (_, _) => DebounceLiveRefresh();
+        _stateWatcher.Renamed += (_, _) => DebounceLiveRefresh();
     }
 
     private void DebounceRefresh()
@@ -540,6 +563,7 @@ public partial class MainWindow : Window
     {
         _configWatcher?.Dispose();
         _rateLimitWatcher?.Dispose();
+        _stateWatcher?.Dispose();
         base.OnClosed(e);
     }
 }
