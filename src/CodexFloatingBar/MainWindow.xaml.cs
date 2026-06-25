@@ -198,6 +198,12 @@ public partial class MainWindow : Window
 
     private void RefreshClicked(object sender, RoutedEventArgs e) => UpdateStatus();
 
+    private void HideClicked(object sender, RoutedEventArgs e)
+    {
+        _placementService.Save(this);
+        Hide();
+    }
+
     private void ToggleThemeClicked(object sender, RoutedEventArgs e)
     {
         SetTheme(_appearanceSettings.Theme == AppearanceTheme.Dark ? AppearanceTheme.Light : AppearanceTheme.Dark);
@@ -353,6 +359,9 @@ public partial class MainWindow : Window
         LayoutToggleButton.Width = isVertical ? 24 : 28;
         LayoutToggleButton.Height = isVertical ? 24 : 28;
         LayoutToggleButton.Margin = isVertical ? new Thickness(0, 0, 4, 0) : new Thickness(0, 0, 7, 0);
+        HideButton.Width = isVertical ? 24 : 28;
+        HideButton.Height = isVertical ? 24 : 28;
+        HideButton.Margin = isVertical ? new Thickness(0, 0, 4, 0) : new Thickness(0, 0, 7, 0);
         RefreshButton.Width = isVertical ? 24 : 28;
         RefreshButton.Height = isVertical ? 24 : 28;
         AccountBadge.Visibility = isVertical ? Visibility.Collapsed : Visibility.Visible;

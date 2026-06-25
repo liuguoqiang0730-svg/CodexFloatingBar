@@ -15,6 +15,7 @@ internal sealed class TrayService : IDisposable
     private const string ApiKeysUrl = "https://platform.openai.com/settings/organization/admin-keys";
 
     private readonly NotifyIcon _notifyIcon;
+    private readonly Icon _trayIcon;
     private readonly StartupService _startupService = new();
     private readonly ToolStripMenuItem _darkThemeMenuItem;
     private readonly ToolStripMenuItem _lightThemeMenuItem;
@@ -83,10 +84,11 @@ internal sealed class TrayService : IDisposable
         menu.Items.Add("退出", null, (_, _) => InvokeOnUi(ExitApplication));
         menu.Opening += (_, _) => SyncMenuChecks();
 
+        _trayIcon = CreateTrayIcon();
         _notifyIcon = new NotifyIcon
         {
             Text = "CodexFloatingBar",
-            Icon = SystemIcons.Application,
+            Icon = _trayIcon,
             Visible = true,
             ContextMenuStrip = menu
         };
@@ -98,6 +100,16 @@ internal sealed class TrayService : IDisposable
     }
 
     private static void OpenUrl(string url) => Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+
+    private static Icon CreateTrayIcon()
+    {
+        if (!string.IsNullOrWhiteSpace(Environment.ProcessPath))
+        {
+            return Icon.ExtractAssociatedIcon(Environment.ProcessPath) ?? (Icon)SystemIcons.Application.Clone();
+        }
+
+        return (Icon)SystemIcons.Application.Clone();
+    }
 
     private void SyncMenuChecks()
     {
@@ -164,5 +176,6 @@ internal sealed class TrayService : IDisposable
     {
         _notifyIcon.Visible = false;
         _notifyIcon.Dispose();
+        _trayIcon.Dispose();
     }
 }
