@@ -229,22 +229,41 @@ public partial class MainWindow : Window
 
     private void TestUsageClicked(object sender, RoutedEventArgs e)
     {
-        var remaining = _usageTestStep++ % 3 switch
+        var step = _usageTestStep++ % 4;
+        var primary = _currentUsageSummary?.Primary ?? CreateTestUsageWindow(72, 300, DateTimeOffset.Now.AddHours(2));
+        var secondary = _currentUsageSummary?.Secondary ?? CreateTestUsageWindow(74, 10080, DateTimeOffset.Now.AddDays(4));
+
+        primary = step switch
         {
-            0 => 72,
-            1 => 42,
-            _ => 16
+            0 => CreateTestUsageWindow(50, 300, DateTimeOffset.Now.AddHours(2)),
+            1 => CreateTestUsageWindow(20, 300, DateTimeOffset.Now.AddHours(2)),
+            _ => primary
         };
 
-        var resetAt = DateTimeOffset.Now.AddHours(2).ToUnixTimeSeconds();
-        var weekResetAt = DateTimeOffset.Now.AddDays(4).ToUnixTimeSeconds();
+        secondary = step switch
+        {
+            2 => CreateTestUsageWindow(50, 10080, DateTimeOffset.Now.AddDays(4)),
+            3 => CreateTestUsageWindow(20, 10080, DateTimeOffset.Now.AddDays(4)),
+            _ => secondary
+        };
+
+        var planType = _currentUsageSummary?.PlanType ?? "Pro Lite";
+        var message = $"{FormatWindowName(primary.WindowMinutes)} {primary.RemainingPercent}% {FormatResetTime(primary.ResetAt)}"
+            + $" | {FormatWindowName(secondary.WindowMinutes)} {secondary.RemainingPercent}% {FormatResetTime(secondary.ResetAt)}"
+            + $" | {planType}";
         var summary = CodexRateLimitSummary.Available(
-            $"测试 5 小时 {remaining}% | 测试 1 周 {Math.Max(remaining - 6, 0)}%",
-            "Pro Lite",
-            new CodexRateLimitWindow(100 - remaining, remaining, 300, resetAt),
-            new CodexRateLimitWindow(Math.Min(100, 106 - remaining), Math.Max(remaining - 6, 0), 10080, weekResetAt));
+            message,
+            planType,
+            primary,
+            secondary);
 
         SetUsageStatus(summary);
+    }
+
+    private static CodexRateLimitWindow CreateTestUsageWindow(int remainingPercent, int windowMinutes, DateTimeOffset resetAt)
+    {
+        var remaining = Math.Clamp(remainingPercent, 0, 100);
+        return new CodexRateLimitWindow(100 - remaining, remaining, windowMinutes, resetAt.ToUnixTimeSeconds());
     }
 
     private void ApplyAppearance()
@@ -729,7 +748,7 @@ public partial class MainWindow : Window
         var resourceKey = remainingPercent switch
         {
             >= 50 => "UsageGoodBrush",
-            >= 20 => "UsageWarnBrush",
+            > 20 => "UsageWarnBrush",
             _ => "UsageDangerBrush"
         };
 
@@ -763,7 +782,7 @@ public partial class MainWindow : Window
         return remainingPercent switch
         {
             >= 50 => UsageLevel.Good,
-            >= 20 => UsageLevel.Warn,
+            > 20 => UsageLevel.Warn,
             _ => UsageLevel.Danger
         };
     }
