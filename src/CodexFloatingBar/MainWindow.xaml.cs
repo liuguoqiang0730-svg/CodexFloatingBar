@@ -229,21 +229,23 @@ public partial class MainWindow : Window
 
     private void TestUsageClicked(object sender, RoutedEventArgs e)
     {
-        var step = _usageTestStep++ % 4;
+        var step = _usageTestStep++ % 6;
         var primary = _currentUsageSummary?.Primary ?? CreateTestUsageWindow(72, 300, DateTimeOffset.Now.AddHours(2));
         var secondary = _currentUsageSummary?.Secondary ?? CreateTestUsageWindow(74, 10080, DateTimeOffset.Now.AddDays(4));
 
         primary = step switch
         {
             0 => CreateTestUsageWindow(50, 300, DateTimeOffset.Now.AddHours(2)),
-            1 => CreateTestUsageWindow(20, 300, DateTimeOffset.Now.AddHours(2)),
+            1 => CreateTestUsageWindow(35, 300, DateTimeOffset.Now.AddHours(2)),
+            2 => CreateTestUsageWindow(20, 300, DateTimeOffset.Now.AddHours(2)),
             _ => primary
         };
 
         secondary = step switch
         {
-            2 => CreateTestUsageWindow(50, 10080, DateTimeOffset.Now.AddDays(4)),
-            3 => CreateTestUsageWindow(20, 10080, DateTimeOffset.Now.AddDays(4)),
+            3 => CreateTestUsageWindow(50, 10080, DateTimeOffset.Now.AddDays(4)),
+            4 => CreateTestUsageWindow(35, 10080, DateTimeOffset.Now.AddDays(4)),
+            5 => CreateTestUsageWindow(20, 10080, DateTimeOffset.Now.AddDays(4)),
             _ => secondary
         };
 
