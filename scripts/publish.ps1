@@ -1,5 +1,5 @@
 param(
-    [string]$DotnetPath = "C:\Users\ehang\AppData\Local\Microsoft\dotnet\dotnet.exe",
+    [string]$DotnetPath = "dotnet",
     [string]$Configuration = "Release",
     [string]$Runtime = "win-x64"
 )
@@ -10,14 +10,14 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 $projectPath = Join-Path $repoRoot "src\CodexFloatingBar\CodexFloatingBar.csproj"
 $publishDir = Join-Path $repoRoot "artifacts\publish\$Runtime"
 $publishedExe = Join-Path $publishDir "CodexFloatingBar.exe"
-
-if (-not (Test-Path -LiteralPath $DotnetPath)) {
+$dotnetCommand = Get-Command $DotnetPath -ErrorAction SilentlyContinue
+if ($null -eq $dotnetCommand) {
     throw "dotnet executable not found: $DotnetPath"
 }
 
 New-Item -ItemType Directory -Force -Path $publishDir | Out-Null
 
-& $DotnetPath publish $projectPath `
+& $dotnetCommand.Source publish $projectPath `
     --configuration $Configuration `
     --runtime $Runtime `
     --self-contained true `
