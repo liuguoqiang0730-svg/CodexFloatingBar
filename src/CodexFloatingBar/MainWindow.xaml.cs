@@ -8,6 +8,10 @@ namespace CodexFloatingBar;
 
 public partial class MainWindow : Window
 {
+    private const double DefaultWidthRatio = 0.70;
+    private const double DefaultHeight = 92;
+    private const double MinimumWidth = 560;
+    private const double MinimumHeight = 92;
     private static readonly string ConfigPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex", "config.toml");
     private readonly CodexAccountService _accountService = new();
     private readonly AppearanceService _appearanceService = new();
@@ -25,7 +29,14 @@ public partial class MainWindow : Window
         InitializeComponent();
         _appearanceSettings = _appearanceService.Read();
         ApplyAppearance();
-        _placementService.Restore(this);
+        if (!_placementService.Restore(this))
+        {
+            ApplyDefaultSize();
+        }
+        else if (LooksLikeLegacyFixedSize())
+        {
+            ApplyDefaultSize();
+        }
 
         Loaded += (_, _) =>
         {
@@ -53,6 +64,8 @@ public partial class MainWindow : Window
             }
         };
 
+        SizeChanged += (_, _) => _placementService.Save(this);
+
         _debounceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
         _debounceTimer.Tick += (_, _) =>
         {
@@ -78,9 +91,11 @@ public partial class MainWindow : Window
 
     public void SetScale(double scale)
     {
+        var oldScale = _appearanceSettings.Scale;
         _appearanceSettings = _appearanceSettings with { Scale = Math.Clamp(scale, 0.82, 1.18) };
         _appearanceService.Save(_appearanceSettings);
         ApplyAppearance();
+        ResizeForScale(oldScale, _appearanceSettings.Scale);
         _placementService.Save(this);
     }
 
@@ -137,10 +152,8 @@ public partial class MainWindow : Window
 
     private void ApplyAppearance()
     {
-        Width = 850 * _appearanceSettings.Scale;
-        Height = 92 * _appearanceSettings.Scale;
-        MinWidth = Width;
-        MinHeight = Height;
+        MinWidth = MinimumWidth * _appearanceSettings.Scale;
+        MinHeight = MinimumHeight * _appearanceSettings.Scale;
         Shell.LayoutTransform = new ScaleTransform(_appearanceSettings.Scale, _appearanceSettings.Scale);
 
         if (_appearanceSettings.Theme == AppearanceTheme.Light)
@@ -206,6 +219,34 @@ public partial class MainWindow : Window
     private void SetBrush(string key, string color)
     {
         Resources[key] = new SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(color));
+    }
+
+    private void ApplyDefaultSize()
+    {
+        var workArea = SystemParameters.WorkArea;
+        Width = Math.Max(MinWidth, workArea.Width * DefaultWidthRatio);
+        Height = Math.Max(MinHeight, DefaultHeight * _appearanceSettings.Scale);
+    }
+
+    private bool LooksLikeLegacyFixedSize()
+    {
+        var unscaledWidth = Width / _appearanceSettings.Scale;
+        var unscaledHeight = Height / _appearanceSettings.Scale;
+        return Math.Abs(unscaledHeight - 92) < 1
+            && (Math.Abs(unscaledWidth - 560) < 1
+                || Math.Abs(unscaledWidth - 720) < 1
+                || Math.Abs(unscaledWidth - 850) < 1);
+    }
+
+    private void ResizeForScale(double oldScale, double newScale)
+    {
+        if (oldScale <= 0 || Math.Abs(oldScale - newScale) < 0.001)
+        {
+            return;
+        }
+
+        Width = Math.Max(MinWidth, Width / oldScale * newScale);
+        Height = Math.Max(MinHeight, Height / oldScale * newScale);
     }
 
     private void UpdateAccountIdentity()

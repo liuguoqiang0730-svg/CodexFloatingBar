@@ -4,10 +4,10 @@
         Title="CodexFloatingBar"
         Width="850"
         Height="92"
-        MinWidth="850"
+        MinWidth="560"
         MinHeight="92"
         WindowStyle="None"
-        ResizeMode="NoResize"
+        ResizeMode="CanResizeWithGrip"
         AllowsTransparency="True"
         Background="Transparent"
         Topmost="True"
@@ -38,7 +38,9 @@
         <Style x:Key="ValueText" TargetType="TextBlock">
             <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
             <Setter Property="FontSize" Value="12" />
+            <Setter Property="TextWrapping" Value="Wrap" />
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+            <Setter Property="ToolTip" Value="{Binding Text, RelativeSource={RelativeSource Self}}" />
         </Style>
         <Style x:Key="StatusPanel" TargetType="Border">
             <Setter Property="Background" Value="{DynamicResource CardBrush}" />
@@ -92,7 +94,7 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="8" />
-                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
             <Grid Grid.Row="0">
@@ -109,12 +111,12 @@
 
                 <StackPanel Grid.Column="1" Margin="9,0,10,0" VerticalAlignment="Center">
                     <TextBlock x:Name="TitleText" Foreground="{DynamicResource PrimaryTextBrush}" FontSize="13" FontWeight="SemiBold" Text="Codex Status" />
-                    <TextBlock x:Name="ModelText" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" Margin="0,1,0,0" TextTrimming="CharacterEllipsis" />
+                    <TextBlock x:Name="ModelText" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" Margin="0,1,0,0" TextTrimming="CharacterEllipsis" ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" />
                 </StackPanel>
 
                 <Border Grid.Column="2"
                         Height="26"
-                        MaxWidth="340"
+                        MaxWidth="420"
                         CornerRadius="7"
                         Background="{DynamicResource BadgeBrush}"
                         BorderBrush="{DynamicResource CardBorderBrush}"
@@ -126,7 +128,8 @@
                                Foreground="{DynamicResource SecondaryTextBrush}"
                                FontSize="11"
                                VerticalAlignment="Center"
-                               TextTrimming="CharacterEllipsis" />
+                               TextTrimming="CharacterEllipsis"
+                               ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" />
                 </Border>
 
                 <Button Grid.Column="3" Content="↻" ToolTip="Refresh" Click="RefreshClicked" />
@@ -134,32 +137,40 @@
 
             <Grid Grid.Row="2">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="1.0*" />
-                    <ColumnDefinition Width="1.0*" />
-                    <ColumnDefinition Width="1.22*" />
+                    <ColumnDefinition Width="1.35*" />
+                    <ColumnDefinition Width="0.95*" />
+                    <ColumnDefinition Width="1.45*" />
                 </Grid.ColumnDefinitions>
 
                 <Border Grid.Column="0" Style="{StaticResource StatusPanel}">
-                    <StackPanel>
+                    <StackPanel VerticalAlignment="Stretch">
                         <TextBlock Style="{StaticResource CaptionText}" Text="CONFIG" />
                         <TextBlock x:Name="ManualText" Style="{StaticResource ValueText}" Margin="0,2,0,0" />
                     </StackPanel>
                 </Border>
 
                 <Border Grid.Column="1" Style="{StaticResource StatusPanel}">
-                    <StackPanel>
+                    <StackPanel VerticalAlignment="Stretch">
                         <TextBlock Style="{StaticResource CaptionText}" Text="RUNTIME" />
                         <TextBlock x:Name="StateText" Style="{StaticResource ValueText}" Margin="0,2,0,0" />
                     </StackPanel>
                 </Border>
 
                 <Border Grid.Column="2" Style="{StaticResource StatusPanel}" Margin="0">
-                    <StackPanel>
+                    <StackPanel VerticalAlignment="Stretch">
                         <TextBlock Style="{StaticResource CaptionText}" Text="ACCOUNT" />
                         <TextBlock x:Name="ConfigText" Style="{StaticResource ValueText}" Margin="0,2,0,0" />
                     </StackPanel>
                 </Border>
             </Grid>
+
+            <ResizeGrip Grid.RowSpan="3"
+                        Width="18"
+                        Height="18"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Bottom"
+                        Opacity="0.45"
+                        Margin="0,0,-6,-6" />
         </Grid>
     </Border>
 </Window>

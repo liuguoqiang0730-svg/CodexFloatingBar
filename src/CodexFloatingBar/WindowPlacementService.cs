@@ -12,17 +12,20 @@ internal sealed class WindowPlacementService
         "CodexFloatingBar",
         "window-placement.json");
 
-    public void Restore(Window window)
+    public bool Restore(Window window)
     {
         var placement = ReadPlacement();
         if (placement is null || !IsValidPlacement(placement))
         {
-            return;
+            return false;
         }
 
         window.WindowStartupLocation = WindowStartupLocation.Manual;
         window.Left = placement.Left;
         window.Top = placement.Top;
+        window.Width = Math.Max(window.MinWidth, placement.Width);
+        window.Height = Math.Max(window.MinHeight, placement.Height);
+        return true;
     }
 
     public void Save(Window window)
