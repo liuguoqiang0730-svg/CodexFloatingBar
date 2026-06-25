@@ -234,6 +234,9 @@ public partial class MainWindow : Window
                 accent: "#315C6B",
                 accentHover: "#3B7284",
                 accentPressed: "#254956",
+                usageGood: "#2E8B67",
+                usageWarn: "#C58B12",
+                usageDanger: "#C93F3F",
                 badge: "#0D111827",
                 logo: "#14315C6B",
                 logoBorder: "#33315C6B",
@@ -252,6 +255,9 @@ public partial class MainWindow : Window
             accent: "#2E8B67",
             accentHover: "#37A77B",
             accentPressed: "#246F52",
+            usageGood: "#37A77B",
+            usageWarn: "#E0B341",
+            usageDanger: "#E05252",
             badge: "#20FFFFFF",
             logo: "#1F2E8B67",
             logoBorder: "#552E8B67",
@@ -269,6 +275,9 @@ public partial class MainWindow : Window
         string accent,
         string accentHover,
         string accentPressed,
+        string usageGood,
+        string usageWarn,
+        string usageDanger,
         string badge,
         string logo,
         string logoBorder,
@@ -284,6 +293,9 @@ public partial class MainWindow : Window
         SetBrush("AccentBrush", accent);
         SetBrush("AccentHoverBrush", accentHover);
         SetBrush("AccentPressedBrush", accentPressed);
+        SetBrush("UsageGoodBrush", usageGood);
+        SetBrush("UsageWarnBrush", usageWarn);
+        SetBrush("UsageDangerBrush", usageDanger);
         SetBrush("BadgeBrush", badge);
         SetBrush("LogoBrush", logo);
         SetBrush("LogoBorderBrush", logoBorder);
@@ -608,14 +620,14 @@ public partial class MainWindow : Window
         if (_currentUsageSummary?.Status == CodexRateLimitStatus.Available)
         {
             UsageUnavailableText.Visibility = Visibility.Collapsed;
-            RenderUsageWindow(_currentUsageSummary.Primary, PrimaryUsageRow, PrimaryUsageFillColumn, PrimaryUsageEmptyColumn, PrimaryUsageLabel, PrimaryUsageValue);
-            RenderUsageWindow(_currentUsageSummary.Secondary, SecondaryUsageRow, SecondaryUsageFillColumn, SecondaryUsageEmptyColumn, SecondaryUsageLabel, SecondaryUsageValue);
+            RenderUsageWindow(_currentUsageSummary.Primary, PrimaryUsageRow, PrimaryUsageFillColumn, PrimaryUsageEmptyColumn, PrimaryUsageFill, PrimaryUsageLabel, PrimaryUsageValue);
+            RenderUsageWindow(_currentUsageSummary.Secondary, SecondaryUsageRow, SecondaryUsageFillColumn, SecondaryUsageEmptyColumn, SecondaryUsageFill, SecondaryUsageLabel, SecondaryUsageValue);
             SetTextIfChanged(UsageCaptionText, FormatUsageCaption(_currentUsageSummary.PlanType));
             return;
         }
 
-        RenderPlaceholderUsageWindow(PrimaryUsageRow, PrimaryUsageFillColumn, PrimaryUsageEmptyColumn, PrimaryUsageLabel, PrimaryUsageValue, "5 小时");
-        RenderPlaceholderUsageWindow(SecondaryUsageRow, SecondaryUsageFillColumn, SecondaryUsageEmptyColumn, SecondaryUsageLabel, SecondaryUsageValue, "1 周");
+        RenderPlaceholderUsageWindow(PrimaryUsageRow, PrimaryUsageFillColumn, PrimaryUsageEmptyColumn, PrimaryUsageFill, PrimaryUsageLabel, PrimaryUsageValue, "5 小时");
+        RenderPlaceholderUsageWindow(SecondaryUsageRow, SecondaryUsageFillColumn, SecondaryUsageEmptyColumn, SecondaryUsageFill, SecondaryUsageLabel, SecondaryUsageValue, "1 周");
         SetTextIfChanged(UsageCaptionText, "USAGE");
         SetTextIfChanged(UsageUnavailableText, FormatForLayout(_currentUsageStatus));
         UsageUnavailableText.Visibility = Visibility.Visible;
@@ -625,6 +637,7 @@ public partial class MainWindow : Window
         UIElement row,
         ColumnDefinition fillColumn,
         ColumnDefinition emptyColumn,
+        Border fill,
         TextBlock label,
         TextBlock value,
         string text)
@@ -633,6 +646,7 @@ public partial class MainWindow : Window
         SetTextIfChanged(label, text);
         SetTextIfChanged(value, "--");
         SetUsageBarPercent(fillColumn, emptyColumn, 0);
+        fill.Background = (System.Windows.Media.Brush)System.Windows.Application.Current.Resources["BadgeBrush"];
         row.SetValue(ToolTipProperty, "等待用量记录");
     }
 
@@ -641,6 +655,7 @@ public partial class MainWindow : Window
         UIElement row,
         ColumnDefinition fillColumn,
         ColumnDefinition emptyColumn,
+        Border fill,
         TextBlock label,
         TextBlock value)
     {
@@ -654,6 +669,7 @@ public partial class MainWindow : Window
         SetTextIfChanged(label, FormatWindowName(window.WindowMinutes));
         SetTextIfChanged(value, $"{window.RemainingPercent}% · {FormatResetTime(window.ResetAt)}");
         SetUsageBarPercent(fillColumn, emptyColumn, window.RemainingPercent);
+        fill.Background = GetUsageBrush(window.RemainingPercent);
         row.SetValue(ToolTipProperty, $"剩余 {window.RemainingPercent}% / 已用 {window.UsedPercent}%");
     }
 
@@ -668,6 +684,18 @@ public partial class MainWindow : Window
         var clamped = Math.Clamp(percent, 0, 100);
         fillColumn.Width = new GridLength(clamped, GridUnitType.Star);
         emptyColumn.Width = new GridLength(100 - clamped, GridUnitType.Star);
+    }
+
+    private static System.Windows.Media.Brush GetUsageBrush(int remainingPercent)
+    {
+        var resourceKey = remainingPercent switch
+        {
+            >= 50 => "UsageGoodBrush",
+            >= 20 => "UsageWarnBrush",
+            _ => "UsageDangerBrush"
+        };
+
+        return (System.Windows.Media.Brush)System.Windows.Application.Current.Resources[resourceKey];
     }
 
     private string FormatForLayout(string text)

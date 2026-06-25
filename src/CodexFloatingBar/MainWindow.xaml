@@ -25,6 +25,9 @@
         <SolidColorBrush x:Key="AccentBrush" Color="#2F7D52" />
         <SolidColorBrush x:Key="AccentHoverBrush" Color="#359764" />
         <SolidColorBrush x:Key="AccentPressedBrush" Color="#256A45" />
+        <SolidColorBrush x:Key="UsageGoodBrush" Color="#2E8B67" />
+        <SolidColorBrush x:Key="UsageWarnBrush" Color="#D6A329" />
+        <SolidColorBrush x:Key="UsageDangerBrush" Color="#D84A4A" />
         <SolidColorBrush x:Key="BadgeBrush" Color="#1FFFFFFF" />
         <SolidColorBrush x:Key="LogoBrush" Color="#22359764" />
         <SolidColorBrush x:Key="LogoBorderBrush" Color="#55359764" />
@@ -187,12 +190,12 @@
                                         <ColumnDefinition x:Name="PrimaryUsageFillColumn" Width="0*" />
                                         <ColumnDefinition x:Name="PrimaryUsageEmptyColumn" Width="100*" />
                                     </Grid.ColumnDefinitions>
-                                    <Border Grid.Column="0" Background="{DynamicResource AccentBrush}" CornerRadius="5" />
+                                    <Border x:Name="PrimaryUsageFill" Grid.Column="0" Background="{DynamicResource UsageGoodBrush}" CornerRadius="5" />
                                 </Grid>
                             </Border>
                             <TextBlock x:Name="PrimaryUsageValue" Grid.Column="2" Style="{StaticResource ValueText}" />
                         </Grid>
-                        <Grid x:Name="SecondaryUsageRow" Margin="0,3,0,0">
+                        <Grid x:Name="SecondaryUsageRow" Margin="0,7,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
@@ -205,7 +208,7 @@
                                         <ColumnDefinition x:Name="SecondaryUsageFillColumn" Width="0*" />
                                         <ColumnDefinition x:Name="SecondaryUsageEmptyColumn" Width="100*" />
                                     </Grid.ColumnDefinitions>
-                                    <Border Grid.Column="0" Background="{DynamicResource AccentBrush}" CornerRadius="5" />
+                                    <Border x:Name="SecondaryUsageFill" Grid.Column="0" Background="{DynamicResource UsageGoodBrush}" CornerRadius="5" />
                                 </Grid>
                             </Border>
                             <TextBlock x:Name="SecondaryUsageValue" Grid.Column="2" Style="{StaticResource ValueText}" />
