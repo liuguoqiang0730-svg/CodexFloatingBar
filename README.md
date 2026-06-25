@@ -7,10 +7,11 @@ Repository: https://github.com/liuguoqiang0730-svg/CodexFloatingBar
 ## MVP features
 - Borderless, small, topmost, draggable window
 - Slim status-bar UI with grouped config, runtime, and account sections
-- Switchable black frosted and gray-white themes with persisted scale options
+- Switchable black frosted and gray-white themes from the floating bar or tray menu
 - Defaults to 70% of the current work-area width
 - Resizable window with persisted width, height, and position
 - Switchable horizontal and vertical layouts from the floating bar or tray menu
+- Vertical layout stacks config, selected model/reasoning/speed, and usage text for narrow bars
 - Optional current-user startup toggle from the tray menu
 - Single-instance guard to avoid duplicate floating bars and tray icons
 - Close button hides the window to tray; tray menu can show or hide it

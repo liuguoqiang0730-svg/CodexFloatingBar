@@ -104,6 +104,7 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
                 <Border Width="28" Height="28" CornerRadius="8" Background="{DynamicResource LogoBrush}" BorderBrush="{DynamicResource LogoBorderBrush}" BorderThickness="1">
@@ -134,9 +135,11 @@
                                ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" />
                 </Border>
 
-                <Button x:Name="LayoutToggleButton" Grid.Column="3" Content="↕" ToolTip="切换横竖版" Click="ToggleLayoutClicked" Margin="0,0,7,0" />
+                <Button x:Name="ThemeToggleButton" Grid.Column="3" Content="◐" ToolTip="切换主题" Click="ToggleThemeClicked" Margin="0,0,7,0" />
 
-                <Button Grid.Column="4" Content="↻" ToolTip="Refresh" Click="RefreshClicked" />
+                <Button x:Name="LayoutToggleButton" Grid.Column="4" Content="↕" ToolTip="切换横竖版" Click="ToggleLayoutClicked" Margin="0,0,7,0" />
+
+                <Button Grid.Column="5" Content="↻" ToolTip="Refresh" Click="RefreshClicked" />
             </Grid>
 
             <Grid x:Name="StatusGrid" Grid.Row="2">
@@ -153,21 +156,21 @@
 
                 <Border x:Name="ConfigPanel" Grid.Row="0" Grid.Column="0" Style="{StaticResource StatusPanel}">
                     <StackPanel VerticalAlignment="Stretch">
-                        <TextBlock Style="{StaticResource CaptionText}" Text="CONFIG" />
+                        <TextBlock x:Name="ConfigCaptionText" Style="{StaticResource CaptionText}" Text="CONFIG" />
                         <TextBlock x:Name="ManualText" Style="{StaticResource ValueText}" Margin="0,2,0,0" />
                     </StackPanel>
                 </Border>
 
                 <Border x:Name="RuntimePanel" Grid.Row="0" Grid.Column="1" Style="{StaticResource StatusPanel}">
                     <StackPanel VerticalAlignment="Stretch">
-                        <TextBlock Style="{StaticResource CaptionText}" Text="SESSION" />
+                        <TextBlock x:Name="RuntimeCaptionText" Style="{StaticResource CaptionText}" Text="SESSION" />
                         <TextBlock x:Name="StateText" Style="{StaticResource ValueText}" Margin="0,2,0,0" />
                     </StackPanel>
                 </Border>
 
                 <Border x:Name="UsagePanel" Grid.Row="0" Grid.Column="2" Style="{StaticResource StatusPanel}" Margin="0">
                     <StackPanel VerticalAlignment="Stretch">
-                        <TextBlock Style="{StaticResource CaptionText}" Text="USAGE" />
+                        <TextBlock x:Name="UsageCaptionText" Style="{StaticResource CaptionText}" Text="USAGE" />
                         <TextBlock x:Name="ConfigText" Style="{StaticResource ValueText}" Margin="0,2,0,0" />
                     </StackPanel>
                 </Border>

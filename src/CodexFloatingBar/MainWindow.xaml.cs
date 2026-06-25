@@ -29,6 +29,12 @@ public partial class MainWindow : Window
     private FileSystemWatcher? _configWatcher;
     private FileSystemWatcher? _rateLimitWatcher;
     private AppearanceSettings _appearanceSettings = AppearanceSettings.Default;
+    private string? _configuredModel;
+    private string? _configuredReasoningEffort;
+    private string? _currentModel;
+    private string? _currentReasoningEffort;
+    private string _currentManualStatus = "读取中";
+    private string _currentUsageStatus = "读取中";
     private int _refreshVersion;
     private bool _allowClose;
 
@@ -126,6 +132,7 @@ public partial class MainWindow : Window
         _appearanceSettings = _appearanceSettings with { Layout = layout };
         _appearanceService.Save(_appearanceSettings);
         ApplyAppearance();
+        RenderStatusText();
         ApplyDefaultSize();
         _placementService.Save(this);
     }
@@ -180,6 +187,11 @@ public partial class MainWindow : Window
     }
 
     private void RefreshClicked(object sender, RoutedEventArgs e) => UpdateStatus();
+
+    private void ToggleThemeClicked(object sender, RoutedEventArgs e)
+    {
+        SetTheme(_appearanceSettings.Theme == AppearanceTheme.Dark ? AppearanceTheme.Light : AppearanceTheme.Dark);
+    }
 
     private void ToggleLayoutClicked(object sender, RoutedEventArgs e)
     {
@@ -285,9 +297,12 @@ public partial class MainWindow : Window
 
         MinWidth = (isVertical ? VerticalMinimumWidth : HorizontalMinimumWidth) * _appearanceSettings.Scale;
         MinHeight = (isVertical ? VerticalMinimumHeight : HorizontalMinimumHeight) * _appearanceSettings.Scale;
+        ThemeToggleButton.Content = _appearanceSettings.Theme == AppearanceTheme.Dark ? "☼" : "●";
+        ThemeToggleButton.ToolTip = _appearanceSettings.Theme == AppearanceTheme.Dark ? "切换灰白主题" : "切换黑色主题";
         LayoutToggleButton.Content = isVertical ? "↔" : "↕";
         LayoutToggleButton.ToolTip = isVertical ? "切换横版" : "切换竖版";
-        AccountBadge.MaxWidth = isVertical ? 140 : 420;
+        AccountBadge.MaxWidth = isVertical ? 0 : 420;
+        AccountBadge.Visibility = isVertical ? Visibility.Collapsed : Visibility.Visible;
 
         StatusColumn0.Width = isVertical ? new GridLength(1, GridUnitType.Star) : new GridLength(1.35, GridUnitType.Star);
         StatusColumn1.Width = isVertical ? new GridLength(0) : new GridLength(0.95, GridUnitType.Star);
@@ -299,6 +314,14 @@ public partial class MainWindow : Window
         PositionPanel(ConfigPanel, 0, 0, isVertical ? new Thickness(0, 0, 0, 7) : new Thickness(0, 0, 7, 0));
         PositionPanel(RuntimePanel, isVertical ? 1 : 0, isVertical ? 0 : 1, isVertical ? new Thickness(0, 0, 0, 7) : new Thickness(0, 0, 7, 0));
         PositionPanel(UsagePanel, isVertical ? 2 : 0, isVertical ? 0 : 2, new Thickness(0));
+
+        var alignment = isVertical ? TextAlignment.Center : TextAlignment.Left;
+        ConfigCaptionText.TextAlignment = alignment;
+        RuntimeCaptionText.TextAlignment = alignment;
+        UsageCaptionText.TextAlignment = alignment;
+        ManualText.TextAlignment = alignment;
+        StateText.TextAlignment = alignment;
+        ConfigText.TextAlignment = alignment;
     }
 
     private static void PositionPanel(Border panel, int row, int column, Thickness margin)
@@ -333,15 +356,71 @@ public partial class MainWindow : Window
 
     private void ApplySessionStatus(CodexSessionStatus session)
     {
-        if (!string.IsNullOrWhiteSpace(session.Model))
-        {
-            SetTextIfChanged(ModelText, $"model: {session.Model}");
-        }
+        var model = string.IsNullOrWhiteSpace(session.Model) ? _configuredModel : session.Model;
+        var effort = string.IsNullOrWhiteSpace(session.ReasoningEffort) ? _configuredReasoningEffort : session.ReasoningEffort;
+        SetSelectedStatus(model, effort);
+    }
 
-        if (!string.IsNullOrWhiteSpace(session.ReasoningEffort))
-        {
-            SetTextIfChanged(StateText, $"推理强度: {session.ReasoningEffort}");
-        }
+    private void SetSelectedStatus(string? model, string? reasoningEffort)
+    {
+        _currentModel = model;
+        _currentReasoningEffort = reasoningEffort;
+        RenderSelectedStatus();
+    }
+
+    private void SetManualStatus(string text)
+    {
+        _currentManualStatus = text;
+        RenderManualStatus();
+    }
+
+    private void SetUsageStatus(string text)
+    {
+        _currentUsageStatus = text;
+        RenderUsageStatus();
+    }
+
+    private void RenderStatusText()
+    {
+        RenderSelectedStatus();
+        RenderManualStatus();
+        RenderUsageStatus();
+    }
+
+    private void RenderSelectedStatus()
+    {
+        var model = DisplayValue(_currentModel, "未配置模型");
+        var effort = DisplayValue(_currentReasoningEffort, "读取中");
+        const string speed = "默认";
+
+        SetTextIfChanged(ModelText, $"{model} · 推理 {effort} · 速率 {speed}");
+
+        var text = _appearanceSettings.Layout == BarLayout.Vertical
+            ? $"模型{Environment.NewLine}{model}{Environment.NewLine}{Environment.NewLine}推理强度{Environment.NewLine}{effort}{Environment.NewLine}{Environment.NewLine}速率{Environment.NewLine}{speed}"
+            : $"模型 {model}  |  推理强度 {effort}  |  速率 {speed}";
+        SetTextIfChanged(StateText, text);
+    }
+
+    private void RenderManualStatus()
+    {
+        SetTextIfChanged(ManualText, FormatForLayout(_currentManualStatus));
+    }
+
+    private void RenderUsageStatus()
+    {
+        SetTextIfChanged(ConfigText, FormatForLayout(_currentUsageStatus));
+    }
+
+    private string FormatForLayout(string text)
+    {
+        return _appearanceSettings.Layout == BarLayout.Vertical
+            ? text.Replace(" | ", Environment.NewLine, StringComparison.Ordinal)
+            : text;
+    }
+
+    private static string DisplayValue(string? value, string fallback)
+    {
+        return string.IsNullOrWhiteSpace(value) ? fallback : value;
     }
 
     private static void SetTextIfChanged(TextBlock textBlock, string text)
@@ -364,28 +443,31 @@ public partial class MainWindow : Window
         var result = _configService.Read(ConfigPath);
         if (!result.Exists)
         {
-            SetTextIfChanged(ModelText, "model: 未找到 ~/.codex/config.toml");
-            SetTextIfChanged(StateText, "推理强度: 读取中");
-            SetTextIfChanged(ConfigText, "读取中");
-            SetTextIfChanged(ManualText, "未找到 config.toml");
+            _configuredModel = null;
+            _configuredReasoningEffort = null;
+            SetSelectedStatus("未找到配置", null);
+            SetUsageStatus("读取中");
+            SetManualStatus("未找到 config.toml");
             await UpdateUsageAsync(usageRefreshVersion);
             return;
         }
 
         if (!result.ReadSucceeded)
         {
-            SetTextIfChanged(ModelText, "model: 读取配置失败");
-            SetTextIfChanged(StateText, "推理强度: 读取中");
-            SetTextIfChanged(ConfigText, "读取中");
-            SetTextIfChanged(ManualText, result.Message ?? "配置读取失败");
+            _configuredModel = null;
+            _configuredReasoningEffort = null;
+            SetSelectedStatus("读取配置失败", null);
+            SetUsageStatus("读取中");
+            SetManualStatus(result.Message ?? "配置读取失败");
             await UpdateUsageAsync(usageRefreshVersion);
             return;
         }
 
-        SetTextIfChanged(ModelText, $"model: {result.Model ?? "未配置"}");
-        SetTextIfChanged(StateText, "推理强度: 读取中");
-        SetTextIfChanged(ConfigText, "读取中");
-        SetTextIfChanged(ManualText, $"config.toml | {DateTime.Now:HH:mm:ss}");
+        _configuredModel = result.Model;
+        _configuredReasoningEffort = result.ReasoningEffort;
+        SetSelectedStatus(result.Model, result.ReasoningEffort);
+        SetUsageStatus("读取中");
+        SetManualStatus($"config.toml | {DateTime.Now:HH:mm:ss}");
         await UpdateUsageAsync(usageRefreshVersion);
     }
 
@@ -399,7 +481,7 @@ public partial class MainWindow : Window
         }
 
         ApplySessionStatus(session);
-        SetTextIfChanged(ConfigText, usage.Message);
+        SetUsageStatus(usage.Message);
     }
 
     private void StartWatcher()
