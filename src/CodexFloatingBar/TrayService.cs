@@ -41,9 +41,9 @@ internal sealed class TrayService : IDisposable
         menu.Items.Add(new ToolStripSeparator());
 
         var themeMenu = new ToolStripMenuItem("配色");
-        _darkThemeMenuItem = new ToolStripMenuItem("黑色色调");
+        _darkThemeMenuItem = new ToolStripMenuItem("黑色磨砂");
         _darkThemeMenuItem.Click += (_, _) => InvokeOnUi(() => _window.SetTheme(AppearanceTheme.Dark));
-        _lightThemeMenuItem = new ToolStripMenuItem("灰白色色调");
+        _lightThemeMenuItem = new ToolStripMenuItem("灰白清爽");
         _lightThemeMenuItem.Click += (_, _) => InvokeOnUi(() => _window.SetTheme(AppearanceTheme.Light));
         themeMenu.DropDownItems.Add(_darkThemeMenuItem);
         themeMenu.DropDownItems.Add(_lightThemeMenuItem);

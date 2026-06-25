@@ -171,32 +171,38 @@ public partial class MainWindow : Window
         if (_appearanceSettings.Theme == AppearanceTheme.Light)
         {
             ApplyTheme(
-                surface: "#F4F7F8FA",
-                border: "#33000000",
+                surface: "#F7F6F7F8",
+                border: "#330F1720",
                 card: "#FFFFFFFF",
-                cardBorder: "#1F000000",
-                primaryText: "#FF1E252E",
-                secondaryText: "#D91E252E",
-                mutedText: "#8C1E252E",
-                badge: "#0F000000",
-                logo: "#18359764",
-                logoBorder: "#38359764",
-                logoText: "#FF2F7D52");
+                cardBorder: "#260F1720",
+                primaryText: "#FF111827",
+                secondaryText: "#D9111827",
+                mutedText: "#8A111827",
+                accent: "#315C6B",
+                accentHover: "#3B7284",
+                accentPressed: "#254956",
+                badge: "#0D111827",
+                logo: "#14315C6B",
+                logoBorder: "#33315C6B",
+                logoText: "#FF315C6B");
             return;
         }
 
         ApplyTheme(
-            surface: "#F20F1216",
-            border: "#2EFFFFFF",
-            card: "#181D23",
-            cardBorder: "#22FFFFFF",
+            surface: "#F208090B",
+            border: "#35FFFFFF",
+            card: "#111317",
+            cardBorder: "#2EFFFFFF",
             primaryText: "#FFFFFFFF",
-            secondaryText: "#D8FFFFFF",
-            mutedText: "#98FFFFFF",
-            badge: "#1FFFFFFF",
-            logo: "#22359764",
-            logoBorder: "#55359764",
-            logoText: "#FF7DE3B2");
+            secondaryText: "#E0FFFFFF",
+            mutedText: "#9CFFFFFF",
+            accent: "#2E8B67",
+            accentHover: "#37A77B",
+            accentPressed: "#246F52",
+            badge: "#20FFFFFF",
+            logo: "#1F2E8B67",
+            logoBorder: "#552E8B67",
+            logoText: "#FF85E0B9");
     }
 
     private void ApplyTheme(
@@ -207,6 +213,9 @@ public partial class MainWindow : Window
         string primaryText,
         string secondaryText,
         string mutedText,
+        string accent,
+        string accentHover,
+        string accentPressed,
         string badge,
         string logo,
         string logoBorder,
@@ -219,9 +228,9 @@ public partial class MainWindow : Window
         SetBrush("PrimaryTextBrush", primaryText);
         SetBrush("SecondaryTextBrush", secondaryText);
         SetBrush("MutedTextBrush", mutedText);
-        SetBrush("AccentBrush", "#2F7D52");
-        SetBrush("AccentHoverBrush", "#359764");
-        SetBrush("AccentPressedBrush", "#256A45");
+        SetBrush("AccentBrush", accent);
+        SetBrush("AccentHoverBrush", accentHover);
+        SetBrush("AccentPressedBrush", accentPressed);
         SetBrush("BadgeBrush", badge);
         SetBrush("LogoBrush", logo);
         SetBrush("LogoBorderBrush", logoBorder);
@@ -272,7 +281,7 @@ public partial class MainWindow : Window
 
         if (!string.IsNullOrWhiteSpace(session.ReasoningEffort))
         {
-            SetTextIfChanged(StateText, $"当前会话推理强度: {session.ReasoningEffort}");
+            SetTextIfChanged(StateText, $"推理强度: {session.ReasoningEffort}");
         }
     }
 
@@ -297,9 +306,9 @@ public partial class MainWindow : Window
         if (!result.Exists)
         {
             SetTextIfChanged(ModelText, "model: 未找到 ~/.codex/config.toml");
-            SetTextIfChanged(StateText, "当前会话: 正在读取本地 Codex 记录");
-            SetTextIfChanged(ConfigText, "剩余用量: 正在读取本地 Codex 记录");
-            SetTextIfChanged(ManualText, result.Message ?? string.Empty);
+            SetTextIfChanged(StateText, "推理强度: 读取中");
+            SetTextIfChanged(ConfigText, "读取中");
+            SetTextIfChanged(ManualText, "未找到 config.toml");
             await UpdateUsageAsync(usageRefreshVersion);
             return;
         }
@@ -307,17 +316,17 @@ public partial class MainWindow : Window
         if (!result.ReadSucceeded)
         {
             SetTextIfChanged(ModelText, "model: 读取配置失败");
-            SetTextIfChanged(StateText, "当前会话: 正在读取本地 Codex 记录");
-            SetTextIfChanged(ConfigText, "剩余用量: 正在读取本地 Codex 记录");
-            SetTextIfChanged(ManualText, result.Message ?? string.Empty);
+            SetTextIfChanged(StateText, "推理强度: 读取中");
+            SetTextIfChanged(ConfigText, "读取中");
+            SetTextIfChanged(ManualText, result.Message ?? "配置读取失败");
             await UpdateUsageAsync(usageRefreshVersion);
             return;
         }
 
         SetTextIfChanged(ModelText, $"model: {result.Model ?? "未配置"}");
-        SetTextIfChanged(StateText, "当前会话推理强度: 读取中");
-        SetTextIfChanged(ConfigText, "剩余用量: 正在读取本地 Codex 记录");
-        SetTextIfChanged(ManualText, $"配置文件: {ConfigPath}  |  最近刷新: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+        SetTextIfChanged(StateText, "推理强度: 读取中");
+        SetTextIfChanged(ConfigText, "读取中");
+        SetTextIfChanged(ManualText, $"config.toml | {DateTime.Now:HH:mm:ss}");
         await UpdateUsageAsync(usageRefreshVersion);
     }
 

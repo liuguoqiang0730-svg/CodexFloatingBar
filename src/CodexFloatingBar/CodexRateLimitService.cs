@@ -33,7 +33,7 @@ internal sealed class CodexRateLimitService
 
         if (string.IsNullOrWhiteSpace(latestJson))
         {
-            return CodexRateLimitSummary.Unavailable("Codex 用量: 暂无本地记录，发起一次 Codex 对话后刷新");
+            return CodexRateLimitSummary.Unavailable("等待 Codex 用量记录");
         }
 
         try
@@ -44,7 +44,7 @@ internal sealed class CodexRateLimitService
             var planType = ReadString(root, "plan_type");
             if (!root.TryGetProperty("rate_limits", out var limits) || limits.ValueKind != JsonValueKind.Object)
             {
-                return CodexRateLimitSummary.Unavailable("Codex 用量: 本地记录格式无法解析");
+                return CodexRateLimitSummary.Unavailable("等待有效用量记录");
             }
 
             var primary = ReadWindow(limits, "primary");
@@ -52,7 +52,7 @@ internal sealed class CodexRateLimitService
 
             if (primary is null && secondary is null)
             {
-                return CodexRateLimitSummary.Unavailable("Codex 用量: 本地记录暂无额度窗口");
+                return CodexRateLimitSummary.Unavailable("等待额度窗口记录");
             }
 
             var parts = new List<string>();
@@ -68,14 +68,14 @@ internal sealed class CodexRateLimitService
 
             var plan = string.IsNullOrWhiteSpace(planType) ? null : FormatPlanType(planType);
             var message = plan is null
-                ? $"剩余用量: {string.Join(" | ", parts)}"
-                : $"剩余用量: {string.Join(" | ", parts)} | {plan}";
+                ? string.Join(" | ", parts)
+                : $"{string.Join(" | ", parts)} | {plan}";
 
             return CodexRateLimitSummary.Available(message, plan, primary, secondary);
         }
         catch (JsonException)
         {
-            return CodexRateLimitSummary.Unavailable("Codex 用量: 暂无有效本地记录，稍后刷新");
+            return CodexRateLimitSummary.Unavailable("等待有效用量记录");
         }
     }
 

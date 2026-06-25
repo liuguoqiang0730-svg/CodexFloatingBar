@@ -7,7 +7,7 @@ Repository: https://github.com/liuguoqiang0730-svg/CodexFloatingBar
 ## MVP features
 - Borderless, small, topmost, draggable window
 - Slim status-bar UI with grouped config, runtime, and account sections
-- Switchable dark and gray-white themes with persisted scale options
+- Switchable black frosted and gray-white themes with persisted scale options
 - Defaults to 70% of the current work-area width
 - Resizable window with persisted width, height, and position
 - Optional current-user startup toggle from the tray menu
@@ -17,6 +17,7 @@ Repository: https://github.com/liuguoqiang0730-svg/CodexFloatingBar
 - Shows the latest active Codex conversation model and reasoning effort from local logs when available
 - Shows Codex account name/email from local ID-token claims without displaying token values
 - Shows Codex 5-hour and weekly remaining usage from local `codex.rate_limits` log events
+- Keeps the slim bar readable by showing short config, session, and usage summaries with full text in tooltips
 - Surfaces missing, inaccessible, or temporarily unreadable config files in the bar
 - Tray menu can copy the current visible status to the clipboard
 - Manual refresh plus file change monitoring
