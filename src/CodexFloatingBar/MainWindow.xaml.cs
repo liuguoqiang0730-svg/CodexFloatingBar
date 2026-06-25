@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Threading;
 
 namespace CodexFloatingBar;
@@ -18,6 +19,7 @@ public partial class MainWindow : Window
     private const double VerticalDefaultHeight = 340;
     private const double VerticalMinimumWidth = 132;
     private const double VerticalMinimumHeight = 220;
+    private const int LayoutTransitionMilliseconds = 120;
     private static readonly string ConfigPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex", "config.toml");
     private static readonly string CodexHomePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex");
     private readonly CodexAccountService _accountService = new();
@@ -143,10 +145,7 @@ public partial class MainWindow : Window
         var targetGeometry = GetDefaultGeometry(layout, targetSettings.Scale, targetWorkArea);
         _appearanceSettings = targetSettings;
         _appearanceService.Save(_appearanceSettings);
-        ApplyWindowConstraints(layout, targetSettings.Scale);
-        ApplyGeometry(targetGeometry);
-        ApplyAppearance();
-        RenderStatusText();
+        ApplyLayoutChange(layout, targetSettings.Scale, targetGeometry, animate: IsVisible);
         _placementService.Save(this);
     }
 
@@ -344,6 +343,56 @@ public partial class MainWindow : Window
         Height = geometry.Height;
         Left = geometry.Left;
         Top = geometry.Top;
+    }
+
+    private void ApplyLayoutChange(
+        BarLayout layout,
+        double scale,
+        (double Left, double Top, double Width, double Height) geometry,
+        bool animate)
+    {
+        BeginAnimation(OpacityProperty, null);
+
+        if (animate)
+        {
+            Opacity = 0;
+            IsHitTestVisible = false;
+        }
+
+        ApplyWindowConstraints(layout, scale);
+        ApplyGeometry(geometry);
+        ApplyAppearance();
+        RenderStatusText();
+
+        if (animate)
+        {
+            BeginLayoutFadeIn();
+        }
+        else
+        {
+            Opacity = 1;
+            IsHitTestVisible = true;
+        }
+    }
+
+    private void BeginLayoutFadeIn()
+    {
+        var animation = new DoubleAnimation
+        {
+            From = 0,
+            To = 1,
+            Duration = TimeSpan.FromMilliseconds(LayoutTransitionMilliseconds),
+            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut },
+            FillBehavior = FillBehavior.Stop
+        };
+
+        animation.Completed += (_, _) =>
+        {
+            Opacity = 1;
+            IsHitTestVisible = true;
+        };
+
+        BeginAnimation(OpacityProperty, animation, HandoffBehavior.SnapshotAndReplace);
     }
 
     private Rect GetCurrentWorkArea()
