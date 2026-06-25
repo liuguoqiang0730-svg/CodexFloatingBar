@@ -10,9 +10,9 @@ namespace CodexFloatingBar;
 public partial class MainWindow : Window
 {
     private const double DefaultWidthRatio = 0.70;
-    private const double DefaultHeight = 118;
+    private const double DefaultHeight = 108;
     private const double HorizontalMinimumWidth = 560;
-    private const double HorizontalMinimumHeight = 92;
+    private const double HorizontalMinimumHeight = 84;
     private const double VerticalDefaultWidth = 170;
     private const double VerticalDefaultHeight = 340;
     private const double VerticalMinimumWidth = 132;
@@ -36,6 +36,7 @@ public partial class MainWindow : Window
     private string? _currentModel;
     private string? _currentReasoningEffort;
     private string? _currentSpeedTier;
+    private string _accountDisplayText = "账户读取中";
     private string _currentManualStatus = "读取中";
     private string _currentUsageStatus = "读取中";
     private int _refreshVersion;
@@ -299,6 +300,9 @@ public partial class MainWindow : Window
 
         Width = Math.Max(MinWidth, workArea.Width * DefaultWidthRatio);
         Height = Math.Max(MinHeight, DefaultHeight * _appearanceSettings.Scale);
+        WindowStartupLocation = WindowStartupLocation.Manual;
+        Left = workArea.Left + Math.Max(0, (workArea.Width - Width) / 2);
+        Top = workArea.Top + Math.Max(0, (workArea.Height - Height) / 2);
     }
 
     private void ApplyLayout()
@@ -423,6 +427,7 @@ public partial class MainWindow : Window
     private void RenderStatusText()
     {
         RenderSelectedStatus();
+        RenderHeaderText();
         RenderManualStatus();
         RenderUsageStatus();
     }
@@ -433,17 +438,30 @@ public partial class MainWindow : Window
         var effort = DisplayValue(_currentReasoningEffort, "读取中");
         var speed = FormatSpeedLabel(_currentSpeedTier);
 
-        SetTextIfChanged(ModelText, $"{model} · 推理 {effort} · 速率 {speed}");
-
         var text = _appearanceSettings.Layout == BarLayout.Vertical
             ? $"模型{Environment.NewLine}{model}{Environment.NewLine}推理强度{Environment.NewLine}{effort}{Environment.NewLine}速率{Environment.NewLine}{speed}"
             : $"模型 {model}  |  推理强度 {effort}  |  速率 {speed}";
         SetTextIfChanged(StateText, text);
+        RenderHeaderText();
+    }
+
+    private void RenderHeaderText()
+    {
+        var text = _appearanceSettings.Layout == BarLayout.Vertical
+            ? _accountDisplayText
+            : _currentManualStatus.Replace(" | ", " · ", StringComparison.Ordinal);
+        SetTextIfChanged(ModelText, text);
     }
 
     private void RenderManualStatus()
     {
-        SetTextIfChanged(ManualText, FormatForLayout(_currentManualStatus));
+        var text = FormatForLayout(_currentManualStatus);
+        if (_appearanceSettings.Layout == BarLayout.Vertical && !string.IsNullOrWhiteSpace(_accountDisplayText))
+        {
+            text = $"{_accountDisplayText}{Environment.NewLine}{text}";
+        }
+
+        SetTextIfChanged(ManualText, text);
     }
 
     private void RenderUsageStatus()
@@ -482,7 +500,10 @@ public partial class MainWindow : Window
 
     private void UpdateAccountIdentity()
     {
-        SetTextIfChanged(AccountText, _accountService.Read().DisplayText);
+        _accountDisplayText = _accountService.Read().DisplayText;
+        SetTextIfChanged(AccountText, _accountDisplayText);
+        RenderHeaderText();
+        RenderManualStatus();
     }
 
     private async void UpdateStatus()
