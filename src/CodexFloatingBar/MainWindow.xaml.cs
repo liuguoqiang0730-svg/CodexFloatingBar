@@ -137,7 +137,7 @@ public partial class MainWindow : Window
 
     private void ApplyAppearance()
     {
-        Width = 720 * _appearanceSettings.Scale;
+        Width = 850 * _appearanceSettings.Scale;
         Height = 92 * _appearanceSettings.Scale;
         MinWidth = Width;
         MinHeight = Height;
