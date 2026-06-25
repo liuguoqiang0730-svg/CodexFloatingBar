@@ -11,7 +11,7 @@ public partial class MainWindow : Window
 {
     private const double DefaultWidthRatio = 0.70;
     private const double DefaultHeight = 108;
-    private const double HorizontalTopRatio = 0.18;
+    private const double ScreenEdgeMargin = 12;
     private const double HorizontalMinimumWidth = 560;
     private const double HorizontalMinimumHeight = 84;
     private const double VerticalDefaultWidth = 170;
@@ -138,11 +138,12 @@ public partial class MainWindow : Window
             return;
         }
 
+        var targetWorkArea = GetCurrentWorkArea();
         _appearanceSettings = _appearanceSettings with { Layout = layout };
         _appearanceService.Save(_appearanceSettings);
         ApplyAppearance();
         RenderStatusText();
-        ApplyDefaultSize();
+        ApplyDefaultSize(targetWorkArea);
         _placementService.Save(this);
     }
 
@@ -286,16 +287,16 @@ public partial class MainWindow : Window
         Resources[key] = new SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(color));
     }
 
-    private void ApplyDefaultSize()
+    private void ApplyDefaultSize(Rect? targetWorkArea = null)
     {
-        var workArea = GetCurrentWorkArea();
+        var workArea = targetWorkArea ?? GetCurrentWorkArea();
         if (_appearanceSettings.Layout == BarLayout.Vertical)
         {
             Width = Math.Max(MinWidth, VerticalDefaultWidth * _appearanceSettings.Scale);
             Height = Math.Max(MinHeight, VerticalDefaultHeight * _appearanceSettings.Scale);
             WindowStartupLocation = WindowStartupLocation.Manual;
-            Left = Math.Max(workArea.Left, workArea.Right - Width - 18);
-            Top = Math.Max(workArea.Top, Math.Min(workArea.Bottom - Height - 24, workArea.Top + 72));
+            Left = workArea.Right - Width - ScreenEdgeMargin;
+            Top = workArea.Top + ScreenEdgeMargin;
             ClampToWorkArea(workArea);
             return;
         }
@@ -304,7 +305,7 @@ public partial class MainWindow : Window
         Height = Math.Max(MinHeight, DefaultHeight * _appearanceSettings.Scale);
         WindowStartupLocation = WindowStartupLocation.Manual;
         Left = workArea.Left + Math.Max(0, (workArea.Width - Width) / 2);
-        Top = Math.Max(workArea.Top, Math.Min(workArea.Bottom - Height - 24, workArea.Top + workArea.Height * HorizontalTopRatio));
+        Top = workArea.Top + ScreenEdgeMargin;
         ClampToWorkArea(workArea);
     }
 
