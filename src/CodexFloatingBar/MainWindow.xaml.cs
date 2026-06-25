@@ -296,6 +296,7 @@ public partial class MainWindow : Window
             WindowStartupLocation = WindowStartupLocation.Manual;
             Left = Math.Max(workArea.Left, workArea.Right - Width - 18);
             Top = Math.Max(workArea.Top, Math.Min(workArea.Bottom - Height - 24, workArea.Top + 72));
+            ClampToWorkArea(workArea);
             return;
         }
 
@@ -304,6 +305,7 @@ public partial class MainWindow : Window
         WindowStartupLocation = WindowStartupLocation.Manual;
         Left = workArea.Left + Math.Max(0, (workArea.Width - Width) / 2);
         Top = Math.Max(workArea.Top, Math.Min(workArea.Bottom - Height - 24, workArea.Top + workArea.Height * HorizontalTopRatio));
+        ClampToWorkArea(workArea);
     }
 
     private Rect GetCurrentWorkArea()
@@ -320,6 +322,16 @@ public partial class MainWindow : Window
     }
 
     private static bool IsFinite(double value) => !double.IsNaN(value) && !double.IsInfinity(value);
+
+    private void ClampToWorkArea(Rect workArea)
+    {
+        var width = Math.Min(Math.Max(Width, MinWidth), workArea.Width);
+        var height = Math.Min(Math.Max(Height, MinHeight), workArea.Height);
+        Width = width;
+        Height = height;
+        Left = Math.Min(Math.Max(Left, workArea.Left), workArea.Right - width);
+        Top = Math.Min(Math.Max(Top, workArea.Top), workArea.Bottom - height);
+    }
 
     private void ApplyLayout()
     {
@@ -345,6 +357,7 @@ public partial class MainWindow : Window
         AccountBadge.Visibility = isVertical ? Visibility.Collapsed : Visibility.Visible;
         AccountBadge.MaxWidth = isVertical ? 0 : 420;
         TitleStack.Visibility = isVertical ? Visibility.Collapsed : Visibility.Visible;
+        ModelText.Visibility = Visibility.Collapsed;
 
         StatusColumn0.Width = isVertical ? new GridLength(1, GridUnitType.Star) : new GridLength(1.35, GridUnitType.Star);
         StatusColumn1.Width = isVertical ? new GridLength(0) : new GridLength(0.95, GridUnitType.Star);
@@ -463,10 +476,7 @@ public partial class MainWindow : Window
 
     private void RenderHeaderText()
     {
-        var text = _appearanceSettings.Layout == BarLayout.Vertical
-            ? _accountDisplayText
-            : _currentManualStatus.Replace(" | ", " · ", StringComparison.Ordinal);
-        SetTextIfChanged(ModelText, text);
+        SetTextIfChanged(ModelText, string.Empty);
     }
 
     private void RenderManualStatus()
