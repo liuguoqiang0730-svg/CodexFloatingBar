@@ -8,7 +8,7 @@ namespace CodexFloatingBar;
 internal sealed class CodexRateLimitService
 {
     private const string EventMarker = "\"type\":\"codex.rate_limits\"";
-    private const int MaxScanBytes = 16 * 1024 * 1024;
+    private const int MaxScanBytes = 256 * 1024 * 1024;
     private static readonly string CodexHome = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex");
     private static readonly string[] LogPaths =
     [
@@ -23,22 +23,29 @@ internal sealed class CodexRateLimitService
 
     private static CodexRateLimitSummary ReadLatest(CancellationToken cancellationToken)
     {
-        string? latestJson = null;
+        RateLimitCandidate? latest = null;
 
-        foreach (var path in LogPaths)
+        for (var pathIndex = 0; pathIndex < LogPaths.Length; pathIndex++)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            latestJson = FindLatestRateLimitJson(path) ?? latestJson;
+            foreach (var candidate in FindRateLimitCandidates(LogPaths[pathIndex], pathIndex))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (IsNewerCandidate(candidate, latest))
+                {
+                    latest = candidate;
+                }
+            }
         }
 
-        if (string.IsNullOrWhiteSpace(latestJson))
+        if (latest is null)
         {
             return CodexRateLimitSummary.Unavailable("等待 Codex 用量记录");
         }
 
         try
         {
-            using var document = JsonDocument.Parse(latestJson);
+            using var document = JsonDocument.Parse(latest.Json);
             var root = document.RootElement;
 
             var planType = ReadString(root, "plan_type");
@@ -79,19 +86,20 @@ internal sealed class CodexRateLimitService
         }
     }
 
-    private static string? FindLatestRateLimitJson(string path)
+    private static IEnumerable<RateLimitCandidate> FindRateLimitCandidates(string path, int pathIndex)
     {
         if (!File.Exists(path))
         {
-            return null;
+            yield break;
         }
 
+        string text;
         try
         {
             using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
             if (stream.Length <= 0)
             {
-                return null;
+                yield break;
             }
 
             var bytesToRead = (int)Math.Min(stream.Length, MaxScanBytes);
@@ -110,41 +118,115 @@ internal sealed class CodexRateLimitService
                 totalRead += read;
             }
 
-            var text = Encoding.UTF8.GetString(bytes, 0, totalRead);
-            var searchEnd = text.Length;
-            while (searchEnd > 0)
-            {
-                var markerIndex = text.LastIndexOf(EventMarker, searchEnd - 1, StringComparison.Ordinal);
-                if (markerIndex < 0)
-                {
-                    return null;
-                }
-
-                var start = text.LastIndexOf('{', markerIndex);
-                while (start >= 0)
-                {
-                    var json = ExtractJsonObject(text, start);
-                    if (IsRateLimitEvent(json))
-                    {
-                        return json;
-                    }
-
-                    start = start > 0 ? text.LastIndexOf('{', start - 1) : -1;
-                }
-
-                searchEnd = markerIndex;
-            }
-
-            return null;
+            text = Encoding.UTF8.GetString(bytes, 0, totalRead);
         }
         catch (IOException)
         {
-            return null;
+            yield break;
         }
         catch (UnauthorizedAccessException)
         {
+            yield break;
+        }
+
+        var searchEnd = text.Length;
+        while (searchEnd > 0)
+        {
+            var markerIndex = text.LastIndexOf(EventMarker, searchEnd - 1, StringComparison.Ordinal);
+            if (markerIndex < 0)
+            {
+                yield break;
+            }
+
+            var start = text.LastIndexOf('{', markerIndex);
+            while (start >= 0)
+            {
+                var json = ExtractJsonObject(text, start);
+                if (IsRateLimitEvent(json))
+                {
+                    yield return new RateLimitCandidate(json!, GetObservedAt(json!), pathIndex, markerIndex);
+                    break;
+                }
+
+                start = start > 0 ? text.LastIndexOf('{', start - 1) : -1;
+            }
+
+            searchEnd = markerIndex;
+        }
+    }
+
+    private static bool IsNewerCandidate(RateLimitCandidate candidate, RateLimitCandidate? latest)
+    {
+        if (latest is null)
+        {
+            return true;
+        }
+
+        if (candidate.ObservedAt is not null || latest.ObservedAt is not null)
+        {
+            if (candidate.ObservedAt is null)
+            {
+                return false;
+            }
+
+            if (latest.ObservedAt is null)
+            {
+                return true;
+            }
+
+            if (candidate.ObservedAt.Value != latest.ObservedAt.Value)
+            {
+                return candidate.ObservedAt.Value > latest.ObservedAt.Value;
+            }
+        }
+
+        if (candidate.PathIndex != latest.PathIndex)
+        {
+            return candidate.PathIndex > latest.PathIndex;
+        }
+
+        return candidate.MarkerIndex > latest.MarkerIndex;
+    }
+
+    private static long? GetObservedAt(string json)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(json);
+            var root = document.RootElement;
+            if (!root.TryGetProperty("rate_limits", out var limits) || limits.ValueKind != JsonValueKind.Object)
+            {
+                return null;
+            }
+
+            long? observedAt = null;
+            foreach (var propertyName in new[] { "primary", "secondary" })
+            {
+                var windowObservedAt = GetWindowObservedAt(limits, propertyName);
+                if (windowObservedAt is not null)
+                {
+                    observedAt = observedAt is null ? windowObservedAt : Math.Max(observedAt.Value, windowObservedAt.Value);
+                }
+            }
+
+            return observedAt;
+        }
+        catch (JsonException)
+        {
             return null;
         }
+    }
+
+    private static long? GetWindowObservedAt(JsonElement limits, string propertyName)
+    {
+        if (!limits.TryGetProperty(propertyName, out var window) || window.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
+        var resetAt = ReadLong(window, "reset_at");
+        var resetAfterSeconds = ReadLong(window, "reset_after_seconds");
+        return resetAt is null || resetAfterSeconds is null ? null : resetAt.Value - resetAfterSeconds.Value;
     }
 
     private static string? ExtractJsonObject(string text, int start)
@@ -295,6 +377,12 @@ internal sealed class CodexRateLimitService
         return element.TryGetProperty(propertyName, out var value) && value.TryGetInt64(out var number) ? number : null;
     }
 }
+
+internal sealed record RateLimitCandidate(
+    string Json,
+    long? ObservedAt,
+    int PathIndex,
+    int MarkerIndex);
 
 internal sealed record CodexRateLimitSummary(
     CodexRateLimitStatus Status,
