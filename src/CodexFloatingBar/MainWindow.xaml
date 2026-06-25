@@ -109,6 +109,7 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
                 <Border x:Name="LogoMark" Width="28" Height="28" CornerRadius="8" Background="{DynamicResource LogoBrush}" BorderBrush="{DynamicResource LogoBorderBrush}" BorderThickness="1">
@@ -143,9 +144,11 @@
 
                 <Button x:Name="LayoutToggleButton" Grid.Column="4" Content="↕" ToolTip="切换横竖版" Click="ToggleLayoutClicked" Margin="0,0,7,0" />
 
-                <Button x:Name="HideButton" Grid.Column="5" Content="-" ToolTip="隐藏窗口" Click="HideClicked" Margin="0,0,7,0" />
+                <Button x:Name="TestUsageButton" Grid.Column="5" Content="T" ToolTip="测试用量提示" Click="TestUsageClicked" Margin="0,0,7,0" />
 
-                <Button x:Name="RefreshButton" Grid.Column="6" Content="↻" ToolTip="Refresh" Click="RefreshClicked" />
+                <Button x:Name="HideButton" Grid.Column="6" Content="-" ToolTip="隐藏窗口" Click="HideClicked" Margin="0,0,7,0" />
+
+                <Button x:Name="RefreshButton" Grid.Column="7" Content="↻" ToolTip="Refresh" Click="RefreshClicked" />
             </Grid>
 
             <Grid x:Name="StatusGrid" Grid.Row="2">

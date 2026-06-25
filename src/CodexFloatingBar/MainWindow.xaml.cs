@@ -46,6 +46,7 @@ public partial class MainWindow : Window
     private CodexRateLimitSummary? _currentUsageSummary;
     private UsageLevel? _primaryUsageLevel;
     private UsageLevel? _secondaryUsageLevel;
+    private int _usageTestStep;
     private int _refreshVersion;
     private bool _allowClose;
 
@@ -224,6 +225,26 @@ public partial class MainWindow : Window
     private void ToggleLayoutClicked(object sender, RoutedEventArgs e)
     {
         SetLayout(_appearanceSettings.Layout == BarLayout.Horizontal ? BarLayout.Vertical : BarLayout.Horizontal);
+    }
+
+    private void TestUsageClicked(object sender, RoutedEventArgs e)
+    {
+        var remaining = _usageTestStep++ % 3 switch
+        {
+            0 => 72,
+            1 => 42,
+            _ => 16
+        };
+
+        var resetAt = DateTimeOffset.Now.AddHours(2).ToUnixTimeSeconds();
+        var weekResetAt = DateTimeOffset.Now.AddDays(4).ToUnixTimeSeconds();
+        var summary = CodexRateLimitSummary.Available(
+            $"测试 5 小时 {remaining}% | 测试 1 周 {Math.Max(remaining - 6, 0)}%",
+            "Pro Lite",
+            new CodexRateLimitWindow(100 - remaining, remaining, 300, resetAt),
+            new CodexRateLimitWindow(Math.Min(100, 106 - remaining), Math.Max(remaining - 6, 0), 10080, weekResetAt));
+
+        SetUsageStatus(summary);
     }
 
     private void ApplyAppearance()
@@ -490,6 +511,9 @@ public partial class MainWindow : Window
         LayoutToggleButton.Width = isVertical ? 24 : 28;
         LayoutToggleButton.Height = isVertical ? 24 : 28;
         LayoutToggleButton.Margin = isVertical ? new Thickness(0, 0, 4, 0) : new Thickness(0, 0, 7, 0);
+        TestUsageButton.Width = isVertical ? 24 : 28;
+        TestUsageButton.Height = isVertical ? 24 : 28;
+        TestUsageButton.Margin = isVertical ? new Thickness(0, 0, 4, 0) : new Thickness(0, 0, 7, 0);
         HideButton.Width = isVertical ? 24 : 28;
         HideButton.Height = isVertical ? 24 : 28;
         HideButton.Margin = isVertical ? new Thickness(0, 0, 4, 0) : new Thickness(0, 0, 7, 0);
