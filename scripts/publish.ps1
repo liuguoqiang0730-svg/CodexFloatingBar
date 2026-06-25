@@ -9,6 +9,7 @@ $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $projectPath = Join-Path $repoRoot "src\CodexFloatingBar\CodexFloatingBar.csproj"
 $publishDir = Join-Path $repoRoot "artifacts\publish\$Runtime"
+$publishedExe = Join-Path $publishDir "CodexFloatingBar.exe"
 
 if (-not (Test-Path -LiteralPath $DotnetPath)) {
     throw "dotnet executable not found: $DotnetPath"
@@ -32,3 +33,16 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host "Published to $publishDir"
+
+$desktopDir = [Environment]::GetFolderPath("DesktopDirectory")
+if (-not [string]::IsNullOrWhiteSpace($desktopDir)) {
+    $shortcutPath = Join-Path $desktopDir "CodexFloatingBar.lnk"
+    $shell = New-Object -ComObject WScript.Shell
+    $shortcut = $shell.CreateShortcut($shortcutPath)
+    $shortcut.TargetPath = $publishedExe
+    $shortcut.WorkingDirectory = $publishDir
+    $shortcut.Description = "Codex local status floating bar"
+    $shortcut.IconLocation = "$publishedExe,0"
+    $shortcut.Save()
+    Write-Host "Desktop shortcut updated: $shortcutPath"
+}
