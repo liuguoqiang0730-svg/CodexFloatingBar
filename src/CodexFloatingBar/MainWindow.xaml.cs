@@ -14,8 +14,8 @@ public partial class MainWindow : Window
     private const double DefaultHeight = 118;
     private const double HorizontalMinimumWidth = 560;
     private const double HorizontalMinimumHeight = 92;
-    private const double VerticalMinimumWidth = 280;
-    private const double VerticalMinimumHeight = 420;
+    private const double VerticalMinimumWidth = 220;
+    private const double VerticalMinimumHeight = 260;
     private static readonly string ConfigPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex", "config.toml");
     private static readonly string CodexHomePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex");
     private readonly CodexAccountService _accountService = new();
