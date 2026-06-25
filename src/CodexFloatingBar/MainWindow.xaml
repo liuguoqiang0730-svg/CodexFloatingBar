@@ -50,25 +50,6 @@
             <Setter Property="Padding" Value="8,6" />
             <Setter Property="Margin" Value="0,0,7,0" />
         </Style>
-        <Style x:Key="UsageBar" TargetType="ProgressBar">
-            <Setter Property="Height" Value="10" />
-            <Setter Property="Minimum" Value="0" />
-            <Setter Property="Maximum" Value="100" />
-            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
-            <Setter Property="Background" Value="{DynamicResource BadgeBrush}" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ProgressBar">
-                        <Border Height="{TemplateBinding Height}" Background="{TemplateBinding Background}" CornerRadius="5" ClipToBounds="True">
-                            <Grid x:Name="PART_Track">
-                                <Border x:Name="PART_Indicator" HorizontalAlignment="Left" Background="{TemplateBinding Foreground}" CornerRadius="5" />
-                            </Grid>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
         <Style TargetType="Button">
             <Setter Property="Width" Value="28" />
             <Setter Property="Height" Value="28" />
@@ -195,22 +176,40 @@
                         <TextBlock x:Name="UsageCaptionText" Style="{StaticResource CaptionText}" Text="USAGE" />
                         <Grid x:Name="PrimaryUsageRow" Margin="0,3,0,0">
                             <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <TextBlock x:Name="PrimaryUsageLabel" Style="{StaticResource ValueText}" Text="5 小时" />
-                            <TextBlock x:Name="PrimaryUsageValue" Grid.Column="1" Style="{StaticResource ValueText}" />
+                            <Border Grid.Column="1" Height="10" Margin="9,0" VerticalAlignment="Center" Background="{DynamicResource BadgeBrush}" CornerRadius="5" ClipToBounds="True">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition x:Name="PrimaryUsageFillColumn" Width="0*" />
+                                        <ColumnDefinition x:Name="PrimaryUsageEmptyColumn" Width="100*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border Grid.Column="0" Background="{DynamicResource AccentBrush}" CornerRadius="5" />
+                                </Grid>
+                            </Border>
+                            <TextBlock x:Name="PrimaryUsageValue" Grid.Column="2" Style="{StaticResource ValueText}" />
                         </Grid>
-                        <ProgressBar x:Name="PrimaryUsageBar" Style="{StaticResource UsageBar}" Margin="0,2,0,5" />
-                        <Grid x:Name="SecondaryUsageRow">
+                        <Grid x:Name="SecondaryUsageRow" Margin="0,3,0,0">
                             <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <TextBlock x:Name="SecondaryUsageLabel" Style="{StaticResource ValueText}" Text="1 周" />
-                            <TextBlock x:Name="SecondaryUsageValue" Grid.Column="1" Style="{StaticResource ValueText}" />
+                            <Border Grid.Column="1" Height="10" Margin="9,0" VerticalAlignment="Center" Background="{DynamicResource BadgeBrush}" CornerRadius="5" ClipToBounds="True">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition x:Name="SecondaryUsageFillColumn" Width="0*" />
+                                        <ColumnDefinition x:Name="SecondaryUsageEmptyColumn" Width="100*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border Grid.Column="0" Background="{DynamicResource AccentBrush}" CornerRadius="5" />
+                                </Grid>
+                            </Border>
+                            <TextBlock x:Name="SecondaryUsageValue" Grid.Column="2" Style="{StaticResource ValueText}" />
                         </Grid>
-                        <ProgressBar x:Name="SecondaryUsageBar" Style="{StaticResource UsageBar}" Margin="0,2,0,0" />
                         <TextBlock x:Name="UsagePlanText" Foreground="{DynamicResource MutedTextBrush}" FontSize="10" Margin="0,3,0,0" TextTrimming="CharacterEllipsis" />
                         <TextBlock x:Name="UsageUnavailableText" Style="{StaticResource ValueText}" Margin="0,2,0,0" Visibility="Collapsed" />
                     </StackPanel>

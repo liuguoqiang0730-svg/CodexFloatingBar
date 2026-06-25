@@ -611,14 +611,14 @@ public partial class MainWindow : Window
         if (_currentUsageSummary?.Status == CodexRateLimitStatus.Available)
         {
             UsageUnavailableText.Visibility = Visibility.Collapsed;
-            RenderUsageWindow(_currentUsageSummary.Primary, PrimaryUsageRow, PrimaryUsageBar, PrimaryUsageLabel, PrimaryUsageValue);
-            RenderUsageWindow(_currentUsageSummary.Secondary, SecondaryUsageRow, SecondaryUsageBar, SecondaryUsageLabel, SecondaryUsageValue);
+            RenderUsageWindow(_currentUsageSummary.Primary, PrimaryUsageRow, PrimaryUsageFillColumn, PrimaryUsageEmptyColumn, PrimaryUsageLabel, PrimaryUsageValue);
+            RenderUsageWindow(_currentUsageSummary.Secondary, SecondaryUsageRow, SecondaryUsageFillColumn, SecondaryUsageEmptyColumn, SecondaryUsageLabel, SecondaryUsageValue);
             SetTextIfChanged(UsagePlanText, _currentUsageSummary.PlanType ?? string.Empty);
             return;
         }
 
-        RenderPlaceholderUsageWindow(PrimaryUsageRow, PrimaryUsageBar, PrimaryUsageLabel, PrimaryUsageValue, "5 小时");
-        RenderPlaceholderUsageWindow(SecondaryUsageRow, SecondaryUsageBar, SecondaryUsageLabel, SecondaryUsageValue, "1 周");
+        RenderPlaceholderUsageWindow(PrimaryUsageRow, PrimaryUsageFillColumn, PrimaryUsageEmptyColumn, PrimaryUsageLabel, PrimaryUsageValue, "5 小时");
+        RenderPlaceholderUsageWindow(SecondaryUsageRow, SecondaryUsageFillColumn, SecondaryUsageEmptyColumn, SecondaryUsageLabel, SecondaryUsageValue, "1 周");
         SetTextIfChanged(UsagePlanText, string.Empty);
         SetTextIfChanged(UsageUnavailableText, FormatForLayout(_currentUsageStatus));
         UsageUnavailableText.Visibility = Visibility.Visible;
@@ -626,43 +626,51 @@ public partial class MainWindow : Window
 
     private static void RenderPlaceholderUsageWindow(
         UIElement row,
-        System.Windows.Controls.ProgressBar bar,
+        ColumnDefinition fillColumn,
+        ColumnDefinition emptyColumn,
         TextBlock label,
         TextBlock value,
         string text)
     {
-        SetUsageWindowVisibility(row, bar, true);
+        SetUsageWindowVisibility(row, true);
         SetTextIfChanged(label, text);
         SetTextIfChanged(value, "--");
-        bar.Value = 0;
-        bar.ToolTip = "等待用量记录";
+        SetUsageBarPercent(fillColumn, emptyColumn, 0);
+        row.SetValue(ToolTipProperty, "等待用量记录");
     }
 
     private static void RenderUsageWindow(
         CodexRateLimitWindow? window,
         UIElement row,
-        System.Windows.Controls.ProgressBar bar,
+        ColumnDefinition fillColumn,
+        ColumnDefinition emptyColumn,
         TextBlock label,
         TextBlock value)
     {
         if (window is null)
         {
-            SetUsageWindowVisibility(row, bar, false);
+            SetUsageWindowVisibility(row, false);
             return;
         }
 
-        SetUsageWindowVisibility(row, bar, true);
+        SetUsageWindowVisibility(row, true);
         SetTextIfChanged(label, FormatWindowName(window.WindowMinutes));
         SetTextIfChanged(value, $"{window.RemainingPercent}% · {FormatResetTime(window.ResetAt)}");
-        bar.Value = window.RemainingPercent;
-        bar.ToolTip = $"剩余 {window.RemainingPercent}% / 已用 {window.UsedPercent}%";
+        SetUsageBarPercent(fillColumn, emptyColumn, window.RemainingPercent);
+        row.SetValue(ToolTipProperty, $"剩余 {window.RemainingPercent}% / 已用 {window.UsedPercent}%");
     }
 
-    private static void SetUsageWindowVisibility(UIElement row, UIElement bar, bool isVisible)
+    private static void SetUsageWindowVisibility(UIElement row, bool isVisible)
     {
         var visibility = isVisible ? Visibility.Visible : Visibility.Collapsed;
         row.Visibility = visibility;
-        bar.Visibility = visibility;
+    }
+
+    private static void SetUsageBarPercent(ColumnDefinition fillColumn, ColumnDefinition emptyColumn, int percent)
+    {
+        var clamped = Math.Clamp(percent, 0, 100);
+        fillColumn.Width = new GridLength(clamped, GridUnitType.Star);
+        emptyColumn.Width = new GridLength(100 - clamped, GridUnitType.Star);
     }
 
     private string FormatForLayout(string text)
