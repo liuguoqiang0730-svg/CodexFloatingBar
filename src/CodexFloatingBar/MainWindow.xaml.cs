@@ -46,7 +46,6 @@ public partial class MainWindow : Window
     private CodexRateLimitSummary? _currentUsageSummary;
     private UsageLevel? _primaryUsageLevel;
     private UsageLevel? _secondaryUsageLevel;
-    private int _usageTestStep;
     private int _refreshVersion;
     private bool _allowClose;
 
@@ -225,47 +224,6 @@ public partial class MainWindow : Window
     private void ToggleLayoutClicked(object sender, RoutedEventArgs e)
     {
         SetLayout(_appearanceSettings.Layout == BarLayout.Horizontal ? BarLayout.Vertical : BarLayout.Horizontal);
-    }
-
-    private void TestUsageClicked(object sender, RoutedEventArgs e)
-    {
-        var step = _usageTestStep++ % 6;
-        var primary = _currentUsageSummary?.Primary ?? CreateTestUsageWindow(72, 300, DateTimeOffset.Now.AddHours(2));
-        var secondary = _currentUsageSummary?.Secondary ?? CreateTestUsageWindow(74, 10080, DateTimeOffset.Now.AddDays(4));
-
-        primary = step switch
-        {
-            0 => CreateTestUsageWindow(50, 300, DateTimeOffset.Now.AddHours(2)),
-            1 => CreateTestUsageWindow(35, 300, DateTimeOffset.Now.AddHours(2)),
-            2 => CreateTestUsageWindow(20, 300, DateTimeOffset.Now.AddHours(2)),
-            _ => primary
-        };
-
-        secondary = step switch
-        {
-            3 => CreateTestUsageWindow(50, 10080, DateTimeOffset.Now.AddDays(4)),
-            4 => CreateTestUsageWindow(35, 10080, DateTimeOffset.Now.AddDays(4)),
-            5 => CreateTestUsageWindow(20, 10080, DateTimeOffset.Now.AddDays(4)),
-            _ => secondary
-        };
-
-        var planType = _currentUsageSummary?.PlanType ?? "Pro Lite";
-        var message = $"{FormatWindowName(primary.WindowMinutes)} {primary.RemainingPercent}% {FormatResetTime(primary.ResetAt)}"
-            + $" | {FormatWindowName(secondary.WindowMinutes)} {secondary.RemainingPercent}% {FormatResetTime(secondary.ResetAt)}"
-            + $" | {planType}";
-        var summary = CodexRateLimitSummary.Available(
-            message,
-            planType,
-            primary,
-            secondary);
-
-        SetUsageStatus(summary);
-    }
-
-    private static CodexRateLimitWindow CreateTestUsageWindow(int remainingPercent, int windowMinutes, DateTimeOffset resetAt)
-    {
-        var remaining = Math.Clamp(remainingPercent, 0, 100);
-        return new CodexRateLimitWindow(100 - remaining, remaining, windowMinutes, resetAt.ToUnixTimeSeconds());
     }
 
     private void ApplyAppearance()
@@ -532,9 +490,6 @@ public partial class MainWindow : Window
         LayoutToggleButton.Width = isVertical ? 24 : 28;
         LayoutToggleButton.Height = isVertical ? 24 : 28;
         LayoutToggleButton.Margin = isVertical ? new Thickness(0, 0, 4, 0) : new Thickness(0, 0, 7, 0);
-        TestUsageButton.Width = isVertical ? 24 : 28;
-        TestUsageButton.Height = isVertical ? 24 : 28;
-        TestUsageButton.Margin = isVertical ? new Thickness(0, 0, 4, 0) : new Thickness(0, 0, 7, 0);
         HideButton.Width = isVertical ? 24 : 28;
         HideButton.Height = isVertical ? 24 : 28;
         HideButton.Margin = isVertical ? new Thickness(0, 0, 4, 0) : new Thickness(0, 0, 7, 0);
