@@ -272,7 +272,7 @@ public partial class MainWindow : Window
 
         if (!string.IsNullOrWhiteSpace(session.ReasoningEffort))
         {
-            SetTextIfChanged(StateText, $"当前会话推理强度: {session.ReasoningEffort} | 来源: 最近对话日志");
+            SetTextIfChanged(StateText, $"当前会话推理强度: {session.ReasoningEffort}");
         }
     }
 
@@ -315,7 +315,7 @@ public partial class MainWindow : Window
         }
 
         SetTextIfChanged(ModelText, $"model: {result.Model ?? "未配置"}");
-        SetTextIfChanged(StateText, $"当前会话推理强度: 读取中 | 配置默认: {result.ReasoningEffort ?? "未配置"}");
+        SetTextIfChanged(StateText, "当前会话推理强度: 读取中");
         SetTextIfChanged(ConfigText, "剩余用量: 正在读取本地 Codex 记录");
         SetTextIfChanged(ManualText, $"配置文件: {ConfigPath}  |  最近刷新: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
         await UpdateUsageAsync(usageRefreshVersion);

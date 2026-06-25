@@ -75,7 +75,7 @@ internal sealed class CodexRateLimitService
         }
         catch (JsonException)
         {
-            return CodexRateLimitSummary.Unavailable("Codex 用量: 本地记录 JSON 无法解析");
+            return CodexRateLimitSummary.Unavailable("Codex 用量: 暂无有效本地记录，稍后刷新");
         }
     }
 
@@ -111,14 +111,31 @@ internal sealed class CodexRateLimitService
             }
 
             var text = Encoding.UTF8.GetString(bytes, 0, totalRead);
-            var markerIndex = text.LastIndexOf(EventMarker, StringComparison.Ordinal);
-            if (markerIndex < 0)
+            var searchEnd = text.Length;
+            while (searchEnd > 0)
             {
-                return null;
+                var markerIndex = text.LastIndexOf(EventMarker, searchEnd - 1, StringComparison.Ordinal);
+                if (markerIndex < 0)
+                {
+                    return null;
+                }
+
+                var start = text.LastIndexOf('{', markerIndex);
+                while (start >= 0)
+                {
+                    var json = ExtractJsonObject(text, start);
+                    if (IsRateLimitEvent(json))
+                    {
+                        return json;
+                    }
+
+                    start = start > 0 ? text.LastIndexOf('{', start - 1) : -1;
+                }
+
+                searchEnd = markerIndex;
             }
 
-            var start = text.LastIndexOf('{', markerIndex);
-            return start < 0 ? null : ExtractJsonObject(text, start);
+            return null;
         }
         catch (IOException)
         {
@@ -182,6 +199,27 @@ internal sealed class CodexRateLimitService
         }
 
         return null;
+    }
+
+    private static bool IsRateLimitEvent(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return false;
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(json);
+            var root = document.RootElement;
+            return string.Equals(ReadString(root, "type"), "codex.rate_limits", StringComparison.Ordinal)
+                && root.TryGetProperty("rate_limits", out var limits)
+                && limits.ValueKind == JsonValueKind.Object;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
     }
 
     private static CodexRateLimitWindow? ReadWindow(JsonElement limits, string propertyName)

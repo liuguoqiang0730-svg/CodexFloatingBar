@@ -158,7 +158,7 @@
 
                 <Border Grid.Column="2" Style="{StaticResource StatusPanel}" Margin="0">
                     <StackPanel VerticalAlignment="Stretch">
-                        <TextBlock Style="{StaticResource CaptionText}" Text="ACCOUNT" />
+                        <TextBlock Style="{StaticResource CaptionText}" Text="USAGE" />
                         <TextBlock x:Name="ConfigText" Style="{StaticResource ValueText}" Margin="0,2,0,0" />
                     </StackPanel>
                 </Border>
