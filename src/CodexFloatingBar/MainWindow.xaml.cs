@@ -617,11 +617,25 @@ public partial class MainWindow : Window
             return;
         }
 
-        SetUsageWindowVisibility(PrimaryUsageRow, PrimaryUsageBar, false);
-        SetUsageWindowVisibility(SecondaryUsageRow, SecondaryUsageBar, false);
+        RenderPlaceholderUsageWindow(PrimaryUsageRow, PrimaryUsageBar, PrimaryUsageLabel, PrimaryUsageValue, "5 小时");
+        RenderPlaceholderUsageWindow(SecondaryUsageRow, SecondaryUsageBar, SecondaryUsageLabel, SecondaryUsageValue, "1 周");
         SetTextIfChanged(UsagePlanText, string.Empty);
         SetTextIfChanged(UsageUnavailableText, FormatForLayout(_currentUsageStatus));
         UsageUnavailableText.Visibility = Visibility.Visible;
+    }
+
+    private static void RenderPlaceholderUsageWindow(
+        UIElement row,
+        System.Windows.Controls.ProgressBar bar,
+        TextBlock label,
+        TextBlock value,
+        string text)
+    {
+        SetUsageWindowVisibility(row, bar, true);
+        SetTextIfChanged(label, text);
+        SetTextIfChanged(value, "--");
+        bar.Value = 0;
+        bar.ToolTip = "等待用量记录";
     }
 
     private static void RenderUsageWindow(

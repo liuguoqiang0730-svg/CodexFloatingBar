@@ -51,12 +51,23 @@
             <Setter Property="Margin" Value="0,0,7,0" />
         </Style>
         <Style x:Key="UsageBar" TargetType="ProgressBar">
-            <Setter Property="Height" Value="6" />
+            <Setter Property="Height" Value="10" />
             <Setter Property="Minimum" Value="0" />
             <Setter Property="Maximum" Value="100" />
             <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
             <Setter Property="Background" Value="{DynamicResource BadgeBrush}" />
             <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ProgressBar">
+                        <Border Height="{TemplateBinding Height}" Background="{TemplateBinding Background}" CornerRadius="5" ClipToBounds="True">
+                            <Grid x:Name="PART_Track">
+                                <Border x:Name="PART_Indicator" HorizontalAlignment="Left" Background="{TemplateBinding Foreground}" CornerRadius="5" />
+                            </Grid>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
         <Style TargetType="Button">
             <Setter Property="Width" Value="28" />
@@ -190,7 +201,7 @@
                             <TextBlock x:Name="PrimaryUsageLabel" Style="{StaticResource ValueText}" Text="5 小时" />
                             <TextBlock x:Name="PrimaryUsageValue" Grid.Column="1" Style="{StaticResource ValueText}" />
                         </Grid>
-                        <ProgressBar x:Name="PrimaryUsageBar" Style="{StaticResource UsageBar}" Margin="0,2,0,3" />
+                        <ProgressBar x:Name="PrimaryUsageBar" Style="{StaticResource UsageBar}" Margin="0,2,0,5" />
                         <Grid x:Name="SecondaryUsageRow">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
