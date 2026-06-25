@@ -31,6 +31,7 @@ public partial class MainWindow : Window
     private readonly WindowPlacementService _placementService = new();
     private readonly DispatcherTimer _debounceTimer;
     private readonly DispatcherTimer _liveRefreshTimer;
+    private readonly DispatcherTimer _usageTipTimer;
     private FileSystemWatcher? _configWatcher;
     private FileSystemWatcher? _rateLimitWatcher;
     private FileSystemWatcher? _stateWatcher;
@@ -43,6 +44,8 @@ public partial class MainWindow : Window
     private string _accountDisplayText = "账户读取中";
     private string _currentUsageStatus = "读取中";
     private CodexRateLimitSummary? _currentUsageSummary;
+    private UsageLevel? _primaryUsageLevel;
+    private UsageLevel? _secondaryUsageLevel;
     private int _refreshVersion;
     private bool _allowClose;
 
@@ -104,6 +107,13 @@ public partial class MainWindow : Window
         {
             _liveRefreshTimer.Stop();
             await UpdateLiveStatusAsync(Interlocked.Increment(ref _refreshVersion));
+        };
+
+        _usageTipTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3.8) };
+        _usageTipTimer.Tick += (_, _) =>
+        {
+            _usageTipTimer.Stop();
+            HideUsageTip();
         };
     }
 
@@ -622,10 +632,14 @@ public partial class MainWindow : Window
             UsageUnavailableText.Visibility = Visibility.Collapsed;
             RenderUsageWindow(_currentUsageSummary.Primary, PrimaryUsageRow, PrimaryUsageFillColumn, PrimaryUsageEmptyColumn, PrimaryUsageFill, PrimaryUsageLabel, PrimaryUsageValue);
             RenderUsageWindow(_currentUsageSummary.Secondary, SecondaryUsageRow, SecondaryUsageFillColumn, SecondaryUsageEmptyColumn, SecondaryUsageFill, SecondaryUsageLabel, SecondaryUsageValue);
+            ObserveUsageLevelChange("5 小时", _currentUsageSummary.Primary, ref _primaryUsageLevel);
+            ObserveUsageLevelChange("1 周", _currentUsageSummary.Secondary, ref _secondaryUsageLevel);
             SetTextIfChanged(UsageCaptionText, FormatUsageCaption(_currentUsageSummary.PlanType));
             return;
         }
 
+        _primaryUsageLevel = null;
+        _secondaryUsageLevel = null;
         RenderPlaceholderUsageWindow(PrimaryUsageRow, PrimaryUsageFillColumn, PrimaryUsageEmptyColumn, PrimaryUsageFill, PrimaryUsageLabel, PrimaryUsageValue, "5 小时");
         RenderPlaceholderUsageWindow(SecondaryUsageRow, SecondaryUsageFillColumn, SecondaryUsageEmptyColumn, SecondaryUsageFill, SecondaryUsageLabel, SecondaryUsageValue, "1 周");
         SetTextIfChanged(UsageCaptionText, "USAGE");
@@ -633,7 +647,7 @@ public partial class MainWindow : Window
         UsageUnavailableText.Visibility = Visibility.Visible;
     }
 
-    private static void RenderPlaceholderUsageWindow(
+    private void RenderPlaceholderUsageWindow(
         UIElement row,
         ColumnDefinition fillColumn,
         ColumnDefinition emptyColumn,
@@ -646,11 +660,11 @@ public partial class MainWindow : Window
         SetTextIfChanged(label, text);
         SetTextIfChanged(value, "--");
         SetUsageBarPercent(fillColumn, emptyColumn, 0);
-        fill.Background = (System.Windows.Media.Brush)System.Windows.Application.Current.Resources["BadgeBrush"];
+        fill.Background = GetResourceBrush("BadgeBrush");
         row.SetValue(ToolTipProperty, "等待用量记录");
     }
 
-    private static void RenderUsageWindow(
+    private void RenderUsageWindow(
         CodexRateLimitWindow? window,
         UIElement row,
         ColumnDefinition fillColumn,
@@ -686,7 +700,7 @@ public partial class MainWindow : Window
         emptyColumn.Width = new GridLength(100 - clamped, GridUnitType.Star);
     }
 
-    private static System.Windows.Media.Brush GetUsageBrush(int remainingPercent)
+    private System.Windows.Media.Brush GetUsageBrush(int remainingPercent)
     {
         var resourceKey = remainingPercent switch
         {
@@ -695,7 +709,87 @@ public partial class MainWindow : Window
             _ => "UsageDangerBrush"
         };
 
-        return (System.Windows.Media.Brush)System.Windows.Application.Current.Resources[resourceKey];
+        return GetResourceBrush(resourceKey);
+    }
+
+    private System.Windows.Media.Brush GetResourceBrush(string resourceKey)
+    {
+        return (System.Windows.Media.Brush)Resources[resourceKey];
+    }
+
+    private void ObserveUsageLevelChange(string label, CodexRateLimitWindow? window, ref UsageLevel? currentLevel)
+    {
+        if (window is null)
+        {
+            currentLevel = null;
+            return;
+        }
+
+        var nextLevel = GetUsageLevel(window.RemainingPercent);
+        if (currentLevel is { } previousLevel && nextLevel > previousLevel)
+        {
+            ShowUsageTip(label, window.RemainingPercent, nextLevel);
+        }
+
+        currentLevel = nextLevel;
+    }
+
+    private static UsageLevel GetUsageLevel(int remainingPercent)
+    {
+        return remainingPercent switch
+        {
+            >= 50 => UsageLevel.Good,
+            >= 20 => UsageLevel.Warn,
+            _ => UsageLevel.Danger
+        };
+    }
+
+    private void ShowUsageTip(string label, int remainingPercent, UsageLevel level)
+    {
+        UsageTip.BeginAnimation(OpacityProperty, null);
+
+        var isDanger = level == UsageLevel.Danger;
+        UsageTipTitle.Text = isDanger ? $"{label}额度快用完了" : $"{label}额度低于 50%";
+        UsageTipText.Text = isDanger
+            ? $"当前剩余 {remainingPercent}%，建议放慢使用或等待重置。"
+            : $"当前剩余 {remainingPercent}%，用量进入提醒区间。";
+        UsageTipAccent.Background = GetResourceBrush(isDanger ? "UsageDangerBrush" : "UsageWarnBrush");
+        UsageTip.Visibility = Visibility.Visible;
+        UsageTip.Opacity = 0;
+
+        UsageTip.BeginAnimation(
+            OpacityProperty,
+            new DoubleAnimation
+            {
+                From = 0,
+                To = 1,
+                Duration = TimeSpan.FromMilliseconds(140),
+                EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
+            },
+            HandoffBehavior.SnapshotAndReplace);
+
+        _usageTipTimer.Stop();
+        _usageTipTimer.Start();
+    }
+
+    private void HideUsageTip()
+    {
+        var animation = new DoubleAnimation
+        {
+            From = UsageTip.Opacity,
+            To = 0,
+            Duration = TimeSpan.FromMilliseconds(180),
+            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseIn },
+            FillBehavior = FillBehavior.Stop
+        };
+
+        animation.Completed += (_, _) =>
+        {
+            UsageTip.Opacity = 0;
+            UsageTip.Visibility = Visibility.Collapsed;
+        };
+
+        UsageTip.BeginAnimation(OpacityProperty, animation, HandoffBehavior.SnapshotAndReplace);
     }
 
     private string FormatForLayout(string text)
@@ -877,4 +971,11 @@ public partial class MainWindow : Window
         _stateWatcher?.Dispose();
         base.OnClosed(e);
     }
+}
+
+internal enum UsageLevel
+{
+    Good = 0,
+    Warn = 1,
+    Danger = 2
 }
