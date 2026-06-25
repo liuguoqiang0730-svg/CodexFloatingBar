@@ -13,13 +13,15 @@ public partial class MainWindow : Window
     private const double MinimumWidth = 560;
     private const double MinimumHeight = 92;
     private static readonly string ConfigPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex", "config.toml");
+    private static readonly string CodexHomePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex");
     private readonly CodexAccountService _accountService = new();
     private readonly AppearanceService _appearanceService = new();
     private readonly CodexConfigService _configService = new();
-    private readonly OpenAiUsageService _usageService = new();
+    private readonly CodexRateLimitService _rateLimitService = new();
     private readonly WindowPlacementService _placementService = new();
     private readonly DispatcherTimer _debounceTimer;
-    private FileSystemWatcher? _watcher;
+    private FileSystemWatcher? _configWatcher;
+    private FileSystemWatcher? _rateLimitWatcher;
     private AppearanceSettings _appearanceSettings = AppearanceSettings.Default;
     private int _usageRefreshVersion;
     private bool _allowClose;
@@ -263,7 +265,7 @@ public partial class MainWindow : Window
         {
             ModelText.Text = "model: 未找到 ~/.codex/config.toml";
             StateText.Text = "登录/配置: 需手动查看";
-            ConfigText.Text = "推理强度/速率: 需手动查看；套餐/余额/额度/到期: 官方未提供稳定本地读取";
+            ConfigText.Text = "剩余用量: 正在读取本地 Codex 记录";
             ManualText.Text = result.Message;
             await UpdateUsageAsync(usageRefreshVersion);
             return;
@@ -273,7 +275,7 @@ public partial class MainWindow : Window
         {
             ModelText.Text = "model: 读取配置失败";
             StateText.Text = "登录/配置: 本地配置读取失败";
-            ConfigText.Text = "推理强度/速率: 暂不可用；套餐/余额/额度/到期: 官方未提供稳定本地读取";
+            ConfigText.Text = "剩余用量: 正在读取本地 Codex 记录";
             ManualText.Text = result.Message;
             await UpdateUsageAsync(usageRefreshVersion);
             return;
@@ -281,14 +283,14 @@ public partial class MainWindow : Window
 
         ModelText.Text = $"model: {result.Model ?? "未配置"}";
         StateText.Text = $"推理强度/速率: {result.ReasoningEffort ?? "未配置"}  |  登录/配置: 已读取本地配置";
-        ConfigText.Text = "API 用量: 正在读取；余额/ChatGPT 额度需手动查看";
+        ConfigText.Text = "剩余用量: 正在读取本地 Codex 记录";
         ManualText.Text = $"配置文件: {ConfigPath}  |  最近刷新: {DateTime.Now:yyyy-MM-dd HH:mm:ss}";
         await UpdateUsageAsync(usageRefreshVersion);
     }
 
     private async Task UpdateUsageAsync(int refreshVersion)
     {
-        var usage = await _usageService.ReadTodayAsync();
+        var usage = await _rateLimitService.ReadLatestAsync();
         if (refreshVersion != _usageRefreshVersion)
         {
             return;
@@ -305,15 +307,30 @@ public partial class MainWindow : Window
             return;
         }
 
-        _watcher = new FileSystemWatcher(dir, Path.GetFileName(ConfigPath))
+        _configWatcher = new FileSystemWatcher(dir, Path.GetFileName(ConfigPath))
         {
             NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size | NotifyFilters.FileName | NotifyFilters.CreationTime,
             EnableRaisingEvents = true
         };
 
-        _watcher.Changed += (_, _) => DebounceRefresh();
-        _watcher.Created += (_, _) => DebounceRefresh();
-        _watcher.Renamed += (_, _) => DebounceRefresh();
+        _configWatcher.Changed += (_, _) => DebounceRefresh();
+        _configWatcher.Created += (_, _) => DebounceRefresh();
+        _configWatcher.Renamed += (_, _) => DebounceRefresh();
+
+        if (!Directory.Exists(CodexHomePath))
+        {
+            return;
+        }
+
+        _rateLimitWatcher = new FileSystemWatcher(CodexHomePath, "logs_2.sqlite*")
+        {
+            NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size | NotifyFilters.FileName | NotifyFilters.CreationTime,
+            EnableRaisingEvents = true
+        };
+
+        _rateLimitWatcher.Changed += (_, _) => DebounceRefresh();
+        _rateLimitWatcher.Created += (_, _) => DebounceRefresh();
+        _rateLimitWatcher.Renamed += (_, _) => DebounceRefresh();
     }
 
     private void DebounceRefresh()
@@ -327,7 +344,8 @@ public partial class MainWindow : Window
 
     protected override void OnClosed(EventArgs e)
     {
-        _watcher?.Dispose();
+        _configWatcher?.Dispose();
+        _rateLimitWatcher?.Dispose();
         base.OnClosed(e);
     }
 }

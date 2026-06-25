@@ -15,15 +15,15 @@ Repository: https://github.com/liuguoqiang0730-svg/CodexFloatingBar
 - Close button hides the window to tray; tray menu can show or hide it
 - Reads `C:\Users\ehang\.codex\config.toml` for `model` and `model_reasoning_effort`
 - Shows Codex account name/email from local ID-token claims without displaying token values
-- Optionally reads today's API cost and token usage when `OPENAI_ADMIN_API_KEY` is set
+- Shows Codex 5-hour and weekly remaining usage from local `codex.rate_limits` log events
 - Surfaces missing, inaccessible, or temporarily unreadable config files in the bar
 - Tray menu can copy the current visible status to the clipboard
 - Manual refresh plus file change monitoring
 - Tray menu: refresh, copy current status, show/hide window, open config, open ChatGPT account page, open Billing/API usage/API Keys pages, open GitHub repository, startup toggle, exit
 
 ## Notes
-- Balance, quota, and expiry are shown as manual-check only because there is no stable local read for them.
-- API usage/cost uses OpenAI Admin API endpoints and requires an Admin API key in `OPENAI_ADMIN_API_KEY`.
+- Balance and expiry are shown as manual-check only because there is no stable local read for them.
+- Codex remaining usage is parsed from local client logs under `%USERPROFILE%\.codex\logs_2.sqlite*`; it updates after Codex receives a `codex.rate_limits` event.
 - Window placement and size are stored under `%LOCALAPPDATA%\CodexFloatingBar\window-placement.json`.
 - Appearance is stored under `%LOCALAPPDATA%\CodexFloatingBar\appearance.json`.
 - Startup is stored under `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`.
