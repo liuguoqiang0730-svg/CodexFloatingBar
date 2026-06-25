@@ -13,7 +13,8 @@ Repository: https://github.com/liuguoqiang0730-svg/CodexFloatingBar
 - Optional current-user startup toggle from the tray menu
 - Single-instance guard to avoid duplicate floating bars and tray icons
 - Close button hides the window to tray; tray menu can show or hide it
-- Reads `C:\Users\ehang\.codex\config.toml` for `model` and `model_reasoning_effort`
+- Reads `C:\Users\ehang\.codex\config.toml` for default `model` and `model_reasoning_effort`
+- Shows the latest active Codex conversation model and reasoning effort from local logs when available
 - Shows Codex account name/email from local ID-token claims without displaying token values
 - Shows Codex 5-hour and weekly remaining usage from local `codex.rate_limits` log events
 - Surfaces missing, inaccessible, or temporarily unreadable config files in the bar

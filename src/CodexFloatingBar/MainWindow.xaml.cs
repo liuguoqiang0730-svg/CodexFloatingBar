@@ -1,5 +1,6 @@
 using System.IO;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -18,12 +19,14 @@ public partial class MainWindow : Window
     private readonly AppearanceService _appearanceService = new();
     private readonly CodexConfigService _configService = new();
     private readonly CodexRateLimitService _rateLimitService = new();
+    private readonly CodexSessionStatusService _sessionStatusService = new();
     private readonly WindowPlacementService _placementService = new();
     private readonly DispatcherTimer _debounceTimer;
+    private readonly DispatcherTimer _liveRefreshTimer;
     private FileSystemWatcher? _configWatcher;
     private FileSystemWatcher? _rateLimitWatcher;
     private AppearanceSettings _appearanceSettings = AppearanceSettings.Default;
-    private int _usageRefreshVersion;
+    private int _refreshVersion;
     private bool _allowClose;
 
     public MainWindow()
@@ -73,6 +76,13 @@ public partial class MainWindow : Window
         {
             _debounceTimer.Stop();
             UpdateStatus();
+        };
+
+        _liveRefreshTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(900) };
+        _liveRefreshTimer.Tick += async (_, _) =>
+        {
+            _liveRefreshTimer.Stop();
+            await UpdateLiveStatusAsync(Interlocked.Increment(ref _refreshVersion));
         };
     }
 
@@ -251,52 +261,77 @@ public partial class MainWindow : Window
         Height = Math.Max(MinHeight, Height / oldScale * newScale);
     }
 
+    private Task UpdateLiveStatusAsync(int refreshVersion) => UpdateUsageAsync(refreshVersion);
+
+    private void ApplySessionStatus(CodexSessionStatus session)
+    {
+        if (!string.IsNullOrWhiteSpace(session.Model))
+        {
+            SetTextIfChanged(ModelText, $"model: {session.Model}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(session.ReasoningEffort))
+        {
+            SetTextIfChanged(StateText, $"当前会话推理强度: {session.ReasoningEffort} | 来源: 最近对话日志");
+        }
+    }
+
+    private static void SetTextIfChanged(TextBlock textBlock, string text)
+    {
+        if (!string.Equals(textBlock.Text, text, StringComparison.Ordinal))
+        {
+            textBlock.Text = text;
+        }
+    }
+
     private void UpdateAccountIdentity()
     {
-        AccountText.Text = _accountService.Read().DisplayText;
+        SetTextIfChanged(AccountText, _accountService.Read().DisplayText);
     }
 
     private async void UpdateStatus()
     {
         UpdateAccountIdentity();
-        var usageRefreshVersion = Interlocked.Increment(ref _usageRefreshVersion);
+        var usageRefreshVersion = Interlocked.Increment(ref _refreshVersion);
         var result = _configService.Read(ConfigPath);
         if (!result.Exists)
         {
-            ModelText.Text = "model: 未找到 ~/.codex/config.toml";
-            StateText.Text = "登录/配置: 需手动查看";
-            ConfigText.Text = "剩余用量: 正在读取本地 Codex 记录";
-            ManualText.Text = result.Message;
+            SetTextIfChanged(ModelText, "model: 未找到 ~/.codex/config.toml");
+            SetTextIfChanged(StateText, "当前会话: 正在读取本地 Codex 记录");
+            SetTextIfChanged(ConfigText, "剩余用量: 正在读取本地 Codex 记录");
+            SetTextIfChanged(ManualText, result.Message ?? string.Empty);
             await UpdateUsageAsync(usageRefreshVersion);
             return;
         }
 
         if (!result.ReadSucceeded)
         {
-            ModelText.Text = "model: 读取配置失败";
-            StateText.Text = "登录/配置: 本地配置读取失败";
-            ConfigText.Text = "剩余用量: 正在读取本地 Codex 记录";
-            ManualText.Text = result.Message;
+            SetTextIfChanged(ModelText, "model: 读取配置失败");
+            SetTextIfChanged(StateText, "当前会话: 正在读取本地 Codex 记录");
+            SetTextIfChanged(ConfigText, "剩余用量: 正在读取本地 Codex 记录");
+            SetTextIfChanged(ManualText, result.Message ?? string.Empty);
             await UpdateUsageAsync(usageRefreshVersion);
             return;
         }
 
-        ModelText.Text = $"model: {result.Model ?? "未配置"}";
-        StateText.Text = $"推理强度/速率: {result.ReasoningEffort ?? "未配置"}  |  登录/配置: 已读取本地配置";
-        ConfigText.Text = "剩余用量: 正在读取本地 Codex 记录";
-        ManualText.Text = $"配置文件: {ConfigPath}  |  最近刷新: {DateTime.Now:yyyy-MM-dd HH:mm:ss}";
+        SetTextIfChanged(ModelText, $"model: {result.Model ?? "未配置"}");
+        SetTextIfChanged(StateText, $"当前会话推理强度: 读取中 | 配置默认: {result.ReasoningEffort ?? "未配置"}");
+        SetTextIfChanged(ConfigText, "剩余用量: 正在读取本地 Codex 记录");
+        SetTextIfChanged(ManualText, $"配置文件: {ConfigPath}  |  最近刷新: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
         await UpdateUsageAsync(usageRefreshVersion);
     }
 
     private async Task UpdateUsageAsync(int refreshVersion)
     {
+        var session = await _sessionStatusService.ReadLatestAsync();
         var usage = await _rateLimitService.ReadLatestAsync();
-        if (refreshVersion != _usageRefreshVersion)
+        if (refreshVersion != _refreshVersion)
         {
             return;
         }
 
-        ConfigText.Text = usage.Message;
+        ApplySessionStatus(session);
+        SetTextIfChanged(ConfigText, usage.Message);
     }
 
     private void StartWatcher()
@@ -328,9 +363,9 @@ public partial class MainWindow : Window
             EnableRaisingEvents = true
         };
 
-        _rateLimitWatcher.Changed += (_, _) => DebounceRefresh();
-        _rateLimitWatcher.Created += (_, _) => DebounceRefresh();
-        _rateLimitWatcher.Renamed += (_, _) => DebounceRefresh();
+        _rateLimitWatcher.Changed += (_, _) => DebounceLiveRefresh();
+        _rateLimitWatcher.Created += (_, _) => DebounceLiveRefresh();
+        _rateLimitWatcher.Renamed += (_, _) => DebounceLiveRefresh();
     }
 
     private void DebounceRefresh()
@@ -339,6 +374,15 @@ public partial class MainWindow : Window
         {
             _debounceTimer.Stop();
             _debounceTimer.Start();
+        });
+    }
+
+    private void DebounceLiveRefresh()
+    {
+        Dispatcher.Invoke(() =>
+        {
+            _liveRefreshTimer.Stop();
+            _liveRefreshTimer.Start();
         });
     }
 
