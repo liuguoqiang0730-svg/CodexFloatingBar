@@ -107,7 +107,7 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <Border Width="28" Height="28" CornerRadius="8" Background="{DynamicResource LogoBrush}" BorderBrush="{DynamicResource LogoBorderBrush}" BorderThickness="1">
+                <Border x:Name="LogoMark" Width="28" Height="28" CornerRadius="8" Background="{DynamicResource LogoBrush}" BorderBrush="{DynamicResource LogoBorderBrush}" BorderThickness="1">
                     <TextBlock Text="C" Foreground="{DynamicResource LogoTextBrush}" FontWeight="Bold" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center" />
                 </Border>
 
@@ -139,7 +139,7 @@
 
                 <Button x:Name="LayoutToggleButton" Grid.Column="4" Content="↕" ToolTip="切换横竖版" Click="ToggleLayoutClicked" Margin="0,0,7,0" />
 
-                <Button Grid.Column="5" Content="↻" ToolTip="Refresh" Click="RefreshClicked" />
+                <Button x:Name="RefreshButton" Grid.Column="5" Content="↻" ToolTip="Refresh" Click="RefreshClicked" />
             </Grid>
 
             <Grid x:Name="StatusGrid" Grid.Row="2">

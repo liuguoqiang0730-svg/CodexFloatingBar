@@ -10,11 +10,12 @@ namespace CodexFloatingBar;
 public partial class MainWindow : Window
 {
     private const double DefaultWidthRatio = 0.70;
-    private const double DefaultHeightRatio = 0.70;
     private const double DefaultHeight = 118;
     private const double HorizontalMinimumWidth = 560;
     private const double HorizontalMinimumHeight = 92;
-    private const double VerticalMinimumWidth = 150;
+    private const double VerticalDefaultWidth = 170;
+    private const double VerticalDefaultHeight = 340;
+    private const double VerticalMinimumWidth = 132;
     private const double VerticalMinimumHeight = 220;
     private static readonly string ConfigPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex", "config.toml");
     private static readonly string CodexHomePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex");
@@ -50,6 +51,10 @@ public partial class MainWindow : Window
             ApplyDefaultSize();
         }
         else if (LooksLikeLegacyFixedSize())
+        {
+            ApplyDefaultSize();
+        }
+        else if (LooksLikeLegacyVerticalSize())
         {
             ApplyDefaultSize();
         }
@@ -284,8 +289,11 @@ public partial class MainWindow : Window
         var workArea = SystemParameters.WorkArea;
         if (_appearanceSettings.Layout == BarLayout.Vertical)
         {
-            Width = Math.Max(MinWidth, 180 * _appearanceSettings.Scale);
-            Height = Math.Max(MinHeight, Math.Min(workArea.Height * DefaultHeightRatio, 430 * _appearanceSettings.Scale));
+            Width = Math.Max(MinWidth, VerticalDefaultWidth * _appearanceSettings.Scale);
+            Height = Math.Max(MinHeight, VerticalDefaultHeight * _appearanceSettings.Scale);
+            WindowStartupLocation = WindowStartupLocation.Manual;
+            Left = Math.Max(workArea.Left, workArea.Right - Width - 18);
+            Top = Math.Max(workArea.Top, Math.Min(workArea.Bottom - Height - 24, workArea.Top + 72));
             return;
         }
 
@@ -299,7 +307,9 @@ public partial class MainWindow : Window
 
         MinWidth = (isVertical ? VerticalMinimumWidth : HorizontalMinimumWidth) * _appearanceSettings.Scale;
         MinHeight = (isVertical ? VerticalMinimumHeight : HorizontalMinimumHeight) * _appearanceSettings.Scale;
-        Shell.Padding = isVertical ? new Thickness(7) : new Thickness(11);
+        Shell.Padding = isVertical ? new Thickness(6) : new Thickness(11);
+        LogoMark.Width = isVertical ? 24 : 28;
+        LogoMark.Height = isVertical ? 24 : 28;
         ThemeToggleButton.Content = _appearanceSettings.Theme == AppearanceTheme.Dark ? "☼" : "●";
         ThemeToggleButton.ToolTip = _appearanceSettings.Theme == AppearanceTheme.Dark ? "切换灰白主题" : "切换黑色主题";
         ThemeToggleButton.Width = isVertical ? 24 : 28;
@@ -310,6 +320,8 @@ public partial class MainWindow : Window
         LayoutToggleButton.Width = isVertical ? 24 : 28;
         LayoutToggleButton.Height = isVertical ? 24 : 28;
         LayoutToggleButton.Margin = isVertical ? new Thickness(0, 0, 4, 0) : new Thickness(0, 0, 7, 0);
+        RefreshButton.Width = isVertical ? 24 : 28;
+        RefreshButton.Height = isVertical ? 24 : 28;
         AccountBadge.Visibility = isVertical ? Visibility.Collapsed : Visibility.Visible;
         AccountBadge.MaxWidth = isVertical ? 0 : 420;
         TitleStack.Visibility = isVertical ? Visibility.Collapsed : Visibility.Visible;
@@ -325,9 +337,9 @@ public partial class MainWindow : Window
         PositionPanel(ConfigPanel, 0, 0, isVertical ? new Thickness(0, 0, 0, 6) : new Thickness(0, 0, 7, 0));
         PositionPanel(RuntimePanel, isVertical ? 1 : 0, isVertical ? 0 : 1, isVertical ? new Thickness(0, 0, 0, 6) : new Thickness(0, 0, 7, 0));
         PositionPanel(UsagePanel, isVertical ? 2 : 0, isVertical ? 0 : 2, new Thickness(0));
-        ConfigPanel.Padding = isVertical ? new Thickness(6, 5, 6, 6) : new Thickness(8, 6, 8, 6);
-        RuntimePanel.Padding = isVertical ? new Thickness(6, 5, 6, 6) : new Thickness(8, 6, 8, 6);
-        UsagePanel.Padding = isVertical ? new Thickness(6, 5, 6, 6) : new Thickness(8, 6, 8, 6);
+        ConfigPanel.Padding = isVertical ? new Thickness(5) : new Thickness(8, 6, 8, 6);
+        RuntimePanel.Padding = isVertical ? new Thickness(5) : new Thickness(8, 6, 8, 6);
+        UsagePanel.Padding = isVertical ? new Thickness(5) : new Thickness(8, 6, 8, 6);
 
         var alignment = isVertical ? TextAlignment.Center : TextAlignment.Left;
         ConfigCaptionText.TextAlignment = alignment;
@@ -353,6 +365,18 @@ public partial class MainWindow : Window
             && (Math.Abs(unscaledWidth - 560) < 1
                 || Math.Abs(unscaledWidth - 720) < 1
                 || Math.Abs(unscaledWidth - 850) < 1);
+    }
+
+    private bool LooksLikeLegacyVerticalSize()
+    {
+        if (_appearanceSettings.Layout != BarLayout.Vertical)
+        {
+            return false;
+        }
+
+        var unscaledWidth = Width / _appearanceSettings.Scale;
+        var unscaledHeight = Height / _appearanceSettings.Scale;
+        return unscaledWidth > 240 || unscaledHeight > 520;
     }
 
     private void ResizeForScale(double oldScale, double newScale)
