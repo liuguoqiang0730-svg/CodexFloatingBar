@@ -11,6 +11,7 @@ public partial class MainWindow : Window
 {
     private const double DefaultWidthRatio = 0.70;
     private const double DefaultHeight = 108;
+    private const double HorizontalTopRatio = 0.18;
     private const double HorizontalMinimumWidth = 560;
     private const double HorizontalMinimumHeight = 84;
     private const double VerticalDefaultWidth = 170;
@@ -287,7 +288,7 @@ public partial class MainWindow : Window
 
     private void ApplyDefaultSize()
     {
-        var workArea = SystemParameters.WorkArea;
+        var workArea = GetCurrentWorkArea();
         if (_appearanceSettings.Layout == BarLayout.Vertical)
         {
             Width = Math.Max(MinWidth, VerticalDefaultWidth * _appearanceSettings.Scale);
@@ -302,8 +303,23 @@ public partial class MainWindow : Window
         Height = Math.Max(MinHeight, DefaultHeight * _appearanceSettings.Scale);
         WindowStartupLocation = WindowStartupLocation.Manual;
         Left = workArea.Left + Math.Max(0, (workArea.Width - Width) / 2);
-        Top = workArea.Top + Math.Max(0, (workArea.Height - Height) / 2);
+        Top = Math.Max(workArea.Top, Math.Min(workArea.Bottom - Height - 24, workArea.Top + workArea.Height * HorizontalTopRatio));
     }
+
+    private Rect GetCurrentWorkArea()
+    {
+        if (IsFinite(Left) && IsFinite(Top))
+        {
+            var centerX = Left + Math.Max(Width, MinWidth) / 2;
+            var centerY = Top + Math.Max(Height, MinHeight) / 2;
+            var screen = System.Windows.Forms.Screen.FromPoint(new System.Drawing.Point((int)Math.Round(centerX), (int)Math.Round(centerY)));
+            return new Rect(screen.WorkingArea.Left, screen.WorkingArea.Top, screen.WorkingArea.Width, screen.WorkingArea.Height);
+        }
+
+        return SystemParameters.WorkArea;
+    }
+
+    private static bool IsFinite(double value) => !double.IsNaN(value) && !double.IsInfinity(value);
 
     private void ApplyLayout()
     {
