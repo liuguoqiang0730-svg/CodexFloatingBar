@@ -18,6 +18,8 @@ internal sealed class TrayService : IDisposable
     private readonly StartupService _startupService = new();
     private readonly ToolStripMenuItem _darkThemeMenuItem;
     private readonly ToolStripMenuItem _lightThemeMenuItem;
+    private readonly ToolStripMenuItem _horizontalLayoutMenuItem;
+    private readonly ToolStripMenuItem _verticalLayoutMenuItem;
     private readonly ToolStripMenuItem _scaleSmallMenuItem;
     private readonly ToolStripMenuItem _scaleNormalMenuItem;
     private readonly ToolStripMenuItem _scaleLargeMenuItem;
@@ -48,6 +50,15 @@ internal sealed class TrayService : IDisposable
         themeMenu.DropDownItems.Add(_darkThemeMenuItem);
         themeMenu.DropDownItems.Add(_lightThemeMenuItem);
         menu.Items.Add(themeMenu);
+
+        var layoutMenu = new ToolStripMenuItem("布局");
+        _horizontalLayoutMenuItem = new ToolStripMenuItem("横版");
+        _horizontalLayoutMenuItem.Click += (_, _) => InvokeOnUi(() => _window.SetLayout(BarLayout.Horizontal));
+        _verticalLayoutMenuItem = new ToolStripMenuItem("竖版");
+        _verticalLayoutMenuItem.Click += (_, _) => InvokeOnUi(() => _window.SetLayout(BarLayout.Vertical));
+        layoutMenu.DropDownItems.Add(_horizontalLayoutMenuItem);
+        layoutMenu.DropDownItems.Add(_verticalLayoutMenuItem);
+        menu.Items.Add(layoutMenu);
 
         var scaleMenu = new ToolStripMenuItem("缩放");
         _scaleSmallMenuItem = new ToolStripMenuItem("小 90%");
@@ -93,6 +104,8 @@ internal sealed class TrayService : IDisposable
         _startupMenuItem.Checked = _startupService.IsEnabled();
         _darkThemeMenuItem.Checked = _window.CurrentTheme == AppearanceTheme.Dark;
         _lightThemeMenuItem.Checked = _window.CurrentTheme == AppearanceTheme.Light;
+        _horizontalLayoutMenuItem.Checked = _window.CurrentLayout == BarLayout.Horizontal;
+        _verticalLayoutMenuItem.Checked = _window.CurrentLayout == BarLayout.Vertical;
         _scaleSmallMenuItem.Checked = Math.Abs(_window.CurrentScale - 0.9) < 0.001;
         _scaleNormalMenuItem.Checked = Math.Abs(_window.CurrentScale - 1.0) < 0.001;
         _scaleLargeMenuItem.Checked = Math.Abs(_window.CurrentScale - 1.1) < 0.001;

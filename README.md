@@ -10,6 +10,7 @@ Repository: https://github.com/liuguoqiang0730-svg/CodexFloatingBar
 - Switchable black frosted and gray-white themes with persisted scale options
 - Defaults to 70% of the current work-area width
 - Resizable window with persisted width, height, and position
+- Switchable horizontal and vertical layouts from the floating bar or tray menu
 - Optional current-user startup toggle from the tray menu
 - Single-instance guard to avoid duplicate floating bars and tray icons
 - Close button hides the window to tray; tray menu can show or hide it

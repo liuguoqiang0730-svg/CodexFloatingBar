@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="CodexFloatingBar"
         Width="850"
-        Height="92"
+        Height="118"
         MinWidth="560"
         MinHeight="92"
         WindowStyle="None"
@@ -103,6 +103,7 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
                 <Border Width="28" Height="28" CornerRadius="8" Background="{DynamicResource LogoBrush}" BorderBrush="{DynamicResource LogoBorderBrush}" BorderThickness="1">
@@ -114,7 +115,8 @@
                     <TextBlock x:Name="ModelText" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" Margin="0,1,0,0" TextTrimming="CharacterEllipsis" ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" />
                 </StackPanel>
 
-                <Border Grid.Column="2"
+                <Border x:Name="AccountBadge"
+                        Grid.Column="2"
                         Height="26"
                         MaxWidth="420"
                         CornerRadius="7"
@@ -132,31 +134,38 @@
                                ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" />
                 </Border>
 
-                <Button Grid.Column="3" Content="↻" ToolTip="Refresh" Click="RefreshClicked" />
+                <Button x:Name="LayoutToggleButton" Grid.Column="3" Content="↕" ToolTip="切换横竖版" Click="ToggleLayoutClicked" Margin="0,0,7,0" />
+
+                <Button Grid.Column="4" Content="↻" ToolTip="Refresh" Click="RefreshClicked" />
             </Grid>
 
-            <Grid Grid.Row="2">
+            <Grid x:Name="StatusGrid" Grid.Row="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition x:Name="StatusRow0" Height="*" />
+                    <RowDefinition x:Name="StatusRow1" Height="0" />
+                    <RowDefinition x:Name="StatusRow2" Height="0" />
+                </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="1.35*" />
-                    <ColumnDefinition Width="0.95*" />
-                    <ColumnDefinition Width="1.45*" />
+                    <ColumnDefinition x:Name="StatusColumn0" Width="1.35*" />
+                    <ColumnDefinition x:Name="StatusColumn1" Width="0.95*" />
+                    <ColumnDefinition x:Name="StatusColumn2" Width="1.45*" />
                 </Grid.ColumnDefinitions>
 
-                <Border Grid.Column="0" Style="{StaticResource StatusPanel}">
+                <Border x:Name="ConfigPanel" Grid.Row="0" Grid.Column="0" Style="{StaticResource StatusPanel}">
                     <StackPanel VerticalAlignment="Stretch">
                         <TextBlock Style="{StaticResource CaptionText}" Text="CONFIG" />
                         <TextBlock x:Name="ManualText" Style="{StaticResource ValueText}" Margin="0,2,0,0" />
                     </StackPanel>
                 </Border>
 
-                <Border Grid.Column="1" Style="{StaticResource StatusPanel}">
+                <Border x:Name="RuntimePanel" Grid.Row="0" Grid.Column="1" Style="{StaticResource StatusPanel}">
                     <StackPanel VerticalAlignment="Stretch">
-                        <TextBlock Style="{StaticResource CaptionText}" Text="RUNTIME" />
+                        <TextBlock Style="{StaticResource CaptionText}" Text="SESSION" />
                         <TextBlock x:Name="StateText" Style="{StaticResource ValueText}" Margin="0,2,0,0" />
                     </StackPanel>
                 </Border>
 
-                <Border Grid.Column="2" Style="{StaticResource StatusPanel}" Margin="0">
+                <Border x:Name="UsagePanel" Grid.Row="0" Grid.Column="2" Style="{StaticResource StatusPanel}" Margin="0">
                     <StackPanel VerticalAlignment="Stretch">
                         <TextBlock Style="{StaticResource CaptionText}" Text="USAGE" />
                         <TextBlock x:Name="ConfigText" Style="{StaticResource ValueText}" Margin="0,2,0,0" />

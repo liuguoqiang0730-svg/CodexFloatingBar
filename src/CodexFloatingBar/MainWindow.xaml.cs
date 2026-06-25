@@ -10,9 +10,12 @@ namespace CodexFloatingBar;
 public partial class MainWindow : Window
 {
     private const double DefaultWidthRatio = 0.70;
-    private const double DefaultHeight = 92;
-    private const double MinimumWidth = 560;
-    private const double MinimumHeight = 92;
+    private const double DefaultHeightRatio = 0.70;
+    private const double DefaultHeight = 118;
+    private const double HorizontalMinimumWidth = 560;
+    private const double HorizontalMinimumHeight = 92;
+    private const double VerticalMinimumWidth = 280;
+    private const double VerticalMinimumHeight = 420;
     private static readonly string ConfigPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex", "config.toml");
     private static readonly string CodexHomePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex");
     private readonly CodexAccountService _accountService = new();
@@ -88,6 +91,8 @@ public partial class MainWindow : Window
 
     internal AppearanceTheme CurrentTheme => _appearanceSettings.Theme;
 
+    internal BarLayout CurrentLayout => _appearanceSettings.Layout;
+
     public double CurrentScale => _appearanceSettings.Scale;
 
     public void RefreshStatus() => UpdateStatus();
@@ -108,6 +113,20 @@ public partial class MainWindow : Window
         _appearanceService.Save(_appearanceSettings);
         ApplyAppearance();
         ResizeForScale(oldScale, _appearanceSettings.Scale);
+        _placementService.Save(this);
+    }
+
+    internal void SetLayout(BarLayout layout)
+    {
+        if (_appearanceSettings.Layout == layout)
+        {
+            return;
+        }
+
+        _appearanceSettings = _appearanceSettings with { Layout = layout };
+        _appearanceService.Save(_appearanceSettings);
+        ApplyAppearance();
+        ApplyDefaultSize();
         _placementService.Save(this);
     }
 
@@ -162,10 +181,14 @@ public partial class MainWindow : Window
 
     private void RefreshClicked(object sender, RoutedEventArgs e) => UpdateStatus();
 
+    private void ToggleLayoutClicked(object sender, RoutedEventArgs e)
+    {
+        SetLayout(_appearanceSettings.Layout == BarLayout.Horizontal ? BarLayout.Vertical : BarLayout.Horizontal);
+    }
+
     private void ApplyAppearance()
     {
-        MinWidth = MinimumWidth * _appearanceSettings.Scale;
-        MinHeight = MinimumHeight * _appearanceSettings.Scale;
+        ApplyLayout();
         Shell.LayoutTransform = new ScaleTransform(_appearanceSettings.Scale, _appearanceSettings.Scale);
 
         if (_appearanceSettings.Theme == AppearanceTheme.Light)
@@ -245,8 +268,44 @@ public partial class MainWindow : Window
     private void ApplyDefaultSize()
     {
         var workArea = SystemParameters.WorkArea;
+        if (_appearanceSettings.Layout == BarLayout.Vertical)
+        {
+            Width = Math.Max(MinWidth, 340 * _appearanceSettings.Scale);
+            Height = Math.Max(MinHeight, workArea.Height * DefaultHeightRatio);
+            return;
+        }
+
         Width = Math.Max(MinWidth, workArea.Width * DefaultWidthRatio);
         Height = Math.Max(MinHeight, DefaultHeight * _appearanceSettings.Scale);
+    }
+
+    private void ApplyLayout()
+    {
+        var isVertical = _appearanceSettings.Layout == BarLayout.Vertical;
+
+        MinWidth = (isVertical ? VerticalMinimumWidth : HorizontalMinimumWidth) * _appearanceSettings.Scale;
+        MinHeight = (isVertical ? VerticalMinimumHeight : HorizontalMinimumHeight) * _appearanceSettings.Scale;
+        LayoutToggleButton.Content = isVertical ? "↔" : "↕";
+        LayoutToggleButton.ToolTip = isVertical ? "切换横版" : "切换竖版";
+        AccountBadge.MaxWidth = isVertical ? 140 : 420;
+
+        StatusColumn0.Width = isVertical ? new GridLength(1, GridUnitType.Star) : new GridLength(1.35, GridUnitType.Star);
+        StatusColumn1.Width = isVertical ? new GridLength(0) : new GridLength(0.95, GridUnitType.Star);
+        StatusColumn2.Width = isVertical ? new GridLength(0) : new GridLength(1.45, GridUnitType.Star);
+        StatusRow0.Height = new GridLength(1, GridUnitType.Star);
+        StatusRow1.Height = isVertical ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
+        StatusRow2.Height = isVertical ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
+
+        PositionPanel(ConfigPanel, 0, 0, isVertical ? new Thickness(0, 0, 0, 7) : new Thickness(0, 0, 7, 0));
+        PositionPanel(RuntimePanel, isVertical ? 1 : 0, isVertical ? 0 : 1, isVertical ? new Thickness(0, 0, 0, 7) : new Thickness(0, 0, 7, 0));
+        PositionPanel(UsagePanel, isVertical ? 2 : 0, isVertical ? 0 : 2, new Thickness(0));
+    }
+
+    private static void PositionPanel(Border panel, int row, int column, Thickness margin)
+    {
+        Grid.SetRow(panel, row);
+        Grid.SetColumn(panel, column);
+        panel.Margin = margin;
     }
 
     private bool LooksLikeLegacyFixedSize()
