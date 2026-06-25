@@ -321,14 +321,40 @@ public partial class MainWindow : Window
         {
             var centerX = Left + Math.Max(Width, MinWidth) / 2;
             var centerY = Top + Math.Max(Height, MinHeight) / 2;
-            var screen = System.Windows.Forms.Screen.FromPoint(new System.Drawing.Point((int)Math.Round(centerX), (int)Math.Round(centerY)));
-            return new Rect(screen.WorkingArea.Left, screen.WorkingArea.Top, screen.WorkingArea.Width, screen.WorkingArea.Height);
+            var screen = System.Windows.Forms.Screen.FromPoint(ToDevicePoint(new System.Windows.Point(centerX, centerY)));
+            return ToDipRect(screen.WorkingArea);
         }
 
         return SystemParameters.WorkArea;
     }
 
     private static bool IsFinite(double value) => !double.IsNaN(value) && !double.IsInfinity(value);
+
+    private System.Drawing.Point ToDevicePoint(System.Windows.Point point)
+    {
+        var source = PresentationSource.FromVisual(this);
+        if (source?.CompositionTarget is null)
+        {
+            return new System.Drawing.Point((int)Math.Round(point.X), (int)Math.Round(point.Y));
+        }
+
+        var transformed = source.CompositionTarget.TransformToDevice.Transform(point);
+        return new System.Drawing.Point((int)Math.Round(transformed.X), (int)Math.Round(transformed.Y));
+    }
+
+    private Rect ToDipRect(System.Drawing.Rectangle rectangle)
+    {
+        var source = PresentationSource.FromVisual(this);
+        if (source?.CompositionTarget is null)
+        {
+            return SystemParameters.WorkArea;
+        }
+
+        var transform = source.CompositionTarget.TransformFromDevice;
+        var topLeft = transform.Transform(new System.Windows.Point(rectangle.Left, rectangle.Top));
+        var bottomRight = transform.Transform(new System.Windows.Point(rectangle.Right, rectangle.Bottom));
+        return new Rect(topLeft, bottomRight);
+    }
 
     private void ClampToWorkArea(Rect workArea)
     {
