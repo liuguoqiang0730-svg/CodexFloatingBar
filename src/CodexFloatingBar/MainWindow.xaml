@@ -111,7 +111,7 @@
                     <TextBlock Text="C" Foreground="{DynamicResource LogoTextBrush}" FontWeight="Bold" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center" />
                 </Border>
 
-                <StackPanel Grid.Column="1" Margin="9,0,10,0" VerticalAlignment="Center">
+                <StackPanel x:Name="TitleStack" Grid.Column="1" Margin="9,0,10,0" VerticalAlignment="Center">
                     <TextBlock x:Name="TitleText" Foreground="{DynamicResource PrimaryTextBrush}" FontSize="13" FontWeight="SemiBold" Text="Codex Status" />
                     <TextBlock x:Name="ModelText" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" Margin="0,1,0,0" TextTrimming="CharacterEllipsis" ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" />
                 </StackPanel>

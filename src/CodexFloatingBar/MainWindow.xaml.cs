@@ -14,8 +14,8 @@ public partial class MainWindow : Window
     private const double DefaultHeight = 118;
     private const double HorizontalMinimumWidth = 560;
     private const double HorizontalMinimumHeight = 92;
-    private const double VerticalMinimumWidth = 220;
-    private const double VerticalMinimumHeight = 260;
+    private const double VerticalMinimumWidth = 150;
+    private const double VerticalMinimumHeight = 220;
     private static readonly string ConfigPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex", "config.toml");
     private static readonly string CodexHomePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex");
     private readonly CodexAccountService _accountService = new();
@@ -284,8 +284,8 @@ public partial class MainWindow : Window
         var workArea = SystemParameters.WorkArea;
         if (_appearanceSettings.Layout == BarLayout.Vertical)
         {
-            Width = Math.Max(MinWidth, 340 * _appearanceSettings.Scale);
-            Height = Math.Max(MinHeight, workArea.Height * DefaultHeightRatio);
+            Width = Math.Max(MinWidth, 180 * _appearanceSettings.Scale);
+            Height = Math.Max(MinHeight, Math.Min(workArea.Height * DefaultHeightRatio, 430 * _appearanceSettings.Scale));
             return;
         }
 
@@ -299,23 +299,35 @@ public partial class MainWindow : Window
 
         MinWidth = (isVertical ? VerticalMinimumWidth : HorizontalMinimumWidth) * _appearanceSettings.Scale;
         MinHeight = (isVertical ? VerticalMinimumHeight : HorizontalMinimumHeight) * _appearanceSettings.Scale;
+        Shell.Padding = isVertical ? new Thickness(7) : new Thickness(11);
         ThemeToggleButton.Content = _appearanceSettings.Theme == AppearanceTheme.Dark ? "☼" : "●";
         ThemeToggleButton.ToolTip = _appearanceSettings.Theme == AppearanceTheme.Dark ? "切换灰白主题" : "切换黑色主题";
+        ThemeToggleButton.Width = isVertical ? 24 : 28;
+        ThemeToggleButton.Height = isVertical ? 24 : 28;
+        ThemeToggleButton.Margin = isVertical ? new Thickness(0, 0, 4, 0) : new Thickness(0, 0, 7, 0);
         LayoutToggleButton.Content = isVertical ? "↔" : "↕";
         LayoutToggleButton.ToolTip = isVertical ? "切换横版" : "切换竖版";
-        AccountBadge.MaxWidth = isVertical ? 0 : 420;
+        LayoutToggleButton.Width = isVertical ? 24 : 28;
+        LayoutToggleButton.Height = isVertical ? 24 : 28;
+        LayoutToggleButton.Margin = isVertical ? new Thickness(0, 0, 4, 0) : new Thickness(0, 0, 7, 0);
         AccountBadge.Visibility = isVertical ? Visibility.Collapsed : Visibility.Visible;
+        AccountBadge.MaxWidth = isVertical ? 0 : 420;
+        TitleStack.Visibility = isVertical ? Visibility.Collapsed : Visibility.Visible;
 
         StatusColumn0.Width = isVertical ? new GridLength(1, GridUnitType.Star) : new GridLength(1.35, GridUnitType.Star);
         StatusColumn1.Width = isVertical ? new GridLength(0) : new GridLength(0.95, GridUnitType.Star);
         StatusColumn2.Width = isVertical ? new GridLength(0) : new GridLength(1.45, GridUnitType.Star);
-        StatusRow0.Height = new GridLength(1, GridUnitType.Star);
-        StatusRow1.Height = isVertical ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
-        StatusRow2.Height = isVertical ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
+        StatusRow0.Height = isVertical ? GridLength.Auto : new GridLength(1, GridUnitType.Star);
+        StatusRow1.Height = isVertical ? GridLength.Auto : new GridLength(0);
+        StatusRow2.Height = isVertical ? GridLength.Auto : new GridLength(0);
+        StatusGrid.VerticalAlignment = isVertical ? VerticalAlignment.Top : VerticalAlignment.Stretch;
 
-        PositionPanel(ConfigPanel, 0, 0, isVertical ? new Thickness(0, 0, 0, 7) : new Thickness(0, 0, 7, 0));
-        PositionPanel(RuntimePanel, isVertical ? 1 : 0, isVertical ? 0 : 1, isVertical ? new Thickness(0, 0, 0, 7) : new Thickness(0, 0, 7, 0));
+        PositionPanel(ConfigPanel, 0, 0, isVertical ? new Thickness(0, 0, 0, 6) : new Thickness(0, 0, 7, 0));
+        PositionPanel(RuntimePanel, isVertical ? 1 : 0, isVertical ? 0 : 1, isVertical ? new Thickness(0, 0, 0, 6) : new Thickness(0, 0, 7, 0));
         PositionPanel(UsagePanel, isVertical ? 2 : 0, isVertical ? 0 : 2, new Thickness(0));
+        ConfigPanel.Padding = isVertical ? new Thickness(6, 5, 6, 6) : new Thickness(8, 6, 8, 6);
+        RuntimePanel.Padding = isVertical ? new Thickness(6, 5, 6, 6) : new Thickness(8, 6, 8, 6);
+        UsagePanel.Padding = isVertical ? new Thickness(6, 5, 6, 6) : new Thickness(8, 6, 8, 6);
 
         var alignment = isVertical ? TextAlignment.Center : TextAlignment.Left;
         ConfigCaptionText.TextAlignment = alignment;
@@ -400,7 +412,7 @@ public partial class MainWindow : Window
         SetTextIfChanged(ModelText, $"{model} · 推理 {effort} · 速率 {speed}");
 
         var text = _appearanceSettings.Layout == BarLayout.Vertical
-            ? $"模型{Environment.NewLine}{model}{Environment.NewLine}{Environment.NewLine}推理强度{Environment.NewLine}{effort}{Environment.NewLine}{Environment.NewLine}速率{Environment.NewLine}{speed}"
+            ? $"模型{Environment.NewLine}{model}{Environment.NewLine}推理强度{Environment.NewLine}{effort}{Environment.NewLine}速率{Environment.NewLine}{speed}"
             : $"模型 {model}  |  推理强度 {effort}  |  速率 {speed}";
         SetTextIfChanged(StateText, text);
     }
