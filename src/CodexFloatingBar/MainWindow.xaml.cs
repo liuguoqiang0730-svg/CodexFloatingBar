@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -40,8 +41,8 @@ public partial class MainWindow : Window
     private string? _currentReasoningEffort;
     private string? _currentSpeedTier;
     private string _accountDisplayText = "账户读取中";
-    private string _currentManualStatus = "读取中";
     private string _currentUsageStatus = "读取中";
+    private CodexRateLimitSummary? _currentUsageSummary;
     private int _refreshVersion;
     private bool _allowClose;
 
@@ -157,8 +158,7 @@ public partial class MainWindow : Window
             AccountText.Text,
             ModelText.Text,
             StateText.Text,
-            ConfigText.Text,
-            ManualText.Text);
+            _currentUsageStatus);
 
         try
         {
@@ -478,28 +478,28 @@ public partial class MainWindow : Window
         TitleStack.Visibility = isVertical ? Visibility.Collapsed : Visibility.Visible;
         ModelText.Visibility = Visibility.Collapsed;
 
-        StatusColumn0.Width = isVertical ? new GridLength(1, GridUnitType.Star) : new GridLength(1.35, GridUnitType.Star);
-        StatusColumn1.Width = isVertical ? new GridLength(0) : new GridLength(0.95, GridUnitType.Star);
-        StatusColumn2.Width = isVertical ? new GridLength(0) : new GridLength(1.45, GridUnitType.Star);
+        ConfigPanel.Visibility = Visibility.Collapsed;
+        RuntimePanel.Visibility = Visibility.Visible;
+        UsagePanel.Visibility = Visibility.Visible;
+        StatusColumn0.Width = isVertical ? new GridLength(1, GridUnitType.Star) : new GridLength(1.1, GridUnitType.Star);
+        StatusColumn1.Width = isVertical ? new GridLength(0) : new GridLength(1.25, GridUnitType.Star);
+        StatusColumn2.Width = new GridLength(0);
         StatusRow0.Height = isVertical ? GridLength.Auto : new GridLength(1, GridUnitType.Star);
         StatusRow1.Height = isVertical ? GridLength.Auto : new GridLength(0);
-        StatusRow2.Height = isVertical ? GridLength.Auto : new GridLength(0);
+        StatusRow2.Height = new GridLength(0);
         StatusGrid.VerticalAlignment = isVertical ? VerticalAlignment.Top : VerticalAlignment.Stretch;
 
-        PositionPanel(ConfigPanel, 0, 0, isVertical ? new Thickness(0, 0, 0, 6) : new Thickness(0, 0, 7, 0));
-        PositionPanel(RuntimePanel, isVertical ? 1 : 0, isVertical ? 0 : 1, isVertical ? new Thickness(0, 0, 0, 6) : new Thickness(0, 0, 7, 0));
-        PositionPanel(UsagePanel, isVertical ? 2 : 0, isVertical ? 0 : 2, new Thickness(0));
-        ConfigPanel.Padding = isVertical ? new Thickness(5) : new Thickness(8, 6, 8, 6);
+        PositionPanel(RuntimePanel, 0, 0, isVertical ? new Thickness(0, 0, 0, 6) : new Thickness(0, 0, 7, 0));
+        PositionPanel(UsagePanel, isVertical ? 1 : 0, isVertical ? 0 : 1, new Thickness(0));
         RuntimePanel.Padding = isVertical ? new Thickness(5) : new Thickness(8, 6, 8, 6);
         UsagePanel.Padding = isVertical ? new Thickness(5) : new Thickness(8, 6, 8, 6);
 
         var alignment = isVertical ? TextAlignment.Center : TextAlignment.Left;
-        ConfigCaptionText.TextAlignment = alignment;
         RuntimeCaptionText.TextAlignment = alignment;
         UsageCaptionText.TextAlignment = alignment;
-        ManualText.TextAlignment = alignment;
         StateText.TextAlignment = alignment;
-        ConfigText.TextAlignment = alignment;
+        UsagePlanText.TextAlignment = alignment;
+        UsageUnavailableText.TextAlignment = alignment;
     }
 
     private void ApplyWindowConstraints(BarLayout layout, double scale)
@@ -567,15 +567,17 @@ public partial class MainWindow : Window
         RenderSelectedStatus();
     }
 
-    private void SetManualStatus(string text)
-    {
-        _currentManualStatus = text;
-        RenderManualStatus();
-    }
-
     private void SetUsageStatus(string text)
     {
         _currentUsageStatus = text;
+        _currentUsageSummary = null;
+        RenderUsageStatus();
+    }
+
+    private void SetUsageStatus(CodexRateLimitSummary usage)
+    {
+        _currentUsageStatus = usage.Message;
+        _currentUsageSummary = usage;
         RenderUsageStatus();
     }
 
@@ -583,7 +585,6 @@ public partial class MainWindow : Window
     {
         RenderSelectedStatus();
         RenderHeaderText();
-        RenderManualStatus();
         RenderUsageStatus();
     }
 
@@ -605,20 +606,49 @@ public partial class MainWindow : Window
         SetTextIfChanged(ModelText, string.Empty);
     }
 
-    private void RenderManualStatus()
-    {
-        var text = FormatForLayout(_currentManualStatus);
-        if (_appearanceSettings.Layout == BarLayout.Vertical && !string.IsNullOrWhiteSpace(_accountDisplayText))
-        {
-            text = $"{_accountDisplayText}{Environment.NewLine}{text}";
-        }
-
-        SetTextIfChanged(ManualText, text);
-    }
-
     private void RenderUsageStatus()
     {
-        SetTextIfChanged(ConfigText, FormatForLayout(_currentUsageStatus));
+        if (_currentUsageSummary?.Status == CodexRateLimitStatus.Available)
+        {
+            UsageUnavailableText.Visibility = Visibility.Collapsed;
+            RenderUsageWindow(_currentUsageSummary.Primary, PrimaryUsageRow, PrimaryUsageBar, PrimaryUsageLabel, PrimaryUsageValue);
+            RenderUsageWindow(_currentUsageSummary.Secondary, SecondaryUsageRow, SecondaryUsageBar, SecondaryUsageLabel, SecondaryUsageValue);
+            SetTextIfChanged(UsagePlanText, _currentUsageSummary.PlanType ?? string.Empty);
+            return;
+        }
+
+        SetUsageWindowVisibility(PrimaryUsageRow, PrimaryUsageBar, false);
+        SetUsageWindowVisibility(SecondaryUsageRow, SecondaryUsageBar, false);
+        SetTextIfChanged(UsagePlanText, string.Empty);
+        SetTextIfChanged(UsageUnavailableText, FormatForLayout(_currentUsageStatus));
+        UsageUnavailableText.Visibility = Visibility.Visible;
+    }
+
+    private static void RenderUsageWindow(
+        CodexRateLimitWindow? window,
+        UIElement row,
+        System.Windows.Controls.ProgressBar bar,
+        TextBlock label,
+        TextBlock value)
+    {
+        if (window is null)
+        {
+            SetUsageWindowVisibility(row, bar, false);
+            return;
+        }
+
+        SetUsageWindowVisibility(row, bar, true);
+        SetTextIfChanged(label, FormatWindowName(window.WindowMinutes));
+        SetTextIfChanged(value, $"{window.RemainingPercent}% · {FormatResetTime(window.ResetAt)}");
+        bar.Value = window.RemainingPercent;
+        bar.ToolTip = $"剩余 {window.RemainingPercent}% / 已用 {window.UsedPercent}%";
+    }
+
+    private static void SetUsageWindowVisibility(UIElement row, UIElement bar, bool isVisible)
+    {
+        var visibility = isVisible ? Visibility.Visible : Visibility.Collapsed;
+        row.Visibility = visibility;
+        bar.Visibility = visibility;
     }
 
     private string FormatForLayout(string text)
@@ -642,6 +672,30 @@ public partial class MainWindow : Window
         };
     }
 
+    private static string FormatWindowName(int windowMinutes)
+    {
+        return windowMinutes switch
+        {
+            300 => "5 小时",
+            10080 => "1 周",
+            _ when windowMinutes % 1440 == 0 => $"{windowMinutes / 1440} 天",
+            _ when windowMinutes % 60 == 0 => $"{windowMinutes / 60} 小时",
+            _ => $"{windowMinutes} 分钟"
+        };
+    }
+
+    private static string FormatResetTime(long resetAt)
+    {
+        var reset = DateTimeOffset.FromUnixTimeSeconds(resetAt).LocalDateTime;
+        var now = DateTime.Now;
+        if (reset.Date == now.Date)
+        {
+            return reset.ToString("HH:mm", CultureInfo.CurrentCulture);
+        }
+
+        return reset.ToString("M月d日", CultureInfo.CurrentCulture);
+    }
+
     private static void SetTextIfChanged(TextBlock textBlock, string text)
     {
         if (!string.Equals(textBlock.Text, text, StringComparison.Ordinal))
@@ -655,7 +709,6 @@ public partial class MainWindow : Window
         _accountDisplayText = _accountService.Read().DisplayText;
         SetTextIfChanged(AccountText, _accountDisplayText);
         RenderHeaderText();
-        RenderManualStatus();
     }
 
     private async void UpdateStatus()
@@ -669,7 +722,6 @@ public partial class MainWindow : Window
             _configuredReasoningEffort = null;
             SetSelectedStatus("未找到配置", null, null);
             SetUsageStatus("读取中");
-            SetManualStatus("未找到 config.toml");
             await UpdateUsageAsync(usageRefreshVersion);
             return;
         }
@@ -680,7 +732,6 @@ public partial class MainWindow : Window
             _configuredReasoningEffort = null;
             SetSelectedStatus("读取配置失败", null, null);
             SetUsageStatus("读取中");
-            SetManualStatus(result.Message ?? "配置读取失败");
             await UpdateUsageAsync(usageRefreshVersion);
             return;
         }
@@ -689,7 +740,6 @@ public partial class MainWindow : Window
         _configuredReasoningEffort = result.ReasoningEffort;
         SetSelectedStatus(result.Model, result.ReasoningEffort, null);
         SetUsageStatus("读取中");
-        SetManualStatus($"config.toml | {DateTime.Now:HH:mm:ss}");
         await UpdateUsageAsync(usageRefreshVersion);
     }
 
@@ -703,7 +753,7 @@ public partial class MainWindow : Window
         }
 
         ApplySessionStatus(session);
-        SetUsageStatus(usage.Message);
+        SetUsageStatus(usage);
     }
 
     private void StartWatcher()
