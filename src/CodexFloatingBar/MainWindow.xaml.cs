@@ -139,11 +139,14 @@ public partial class MainWindow : Window
         }
 
         var targetWorkArea = GetCurrentWorkArea();
-        _appearanceSettings = _appearanceSettings with { Layout = layout };
+        var targetSettings = _appearanceSettings with { Layout = layout };
+        var targetGeometry = GetDefaultGeometry(layout, targetSettings.Scale, targetWorkArea);
+        _appearanceSettings = targetSettings;
         _appearanceService.Save(_appearanceSettings);
+        ApplyWindowConstraints(layout, targetSettings.Scale);
+        ApplyGeometry(targetGeometry);
         ApplyAppearance();
         RenderStatusText();
-        ApplyDefaultSize(targetWorkArea);
         _placementService.Save(this);
     }
 
@@ -296,23 +299,51 @@ public partial class MainWindow : Window
     private void ApplyDefaultSize(Rect? targetWorkArea = null)
     {
         var workArea = targetWorkArea ?? GetCurrentWorkArea();
-        if (_appearanceSettings.Layout == BarLayout.Vertical)
+        ApplyGeometry(GetDefaultGeometry(_appearanceSettings.Layout, _appearanceSettings.Scale, workArea));
+    }
+
+    private (double Left, double Top, double Width, double Height) GetDefaultGeometry(BarLayout layout, double scale, Rect workArea)
+    {
+        var minWidth = (layout == BarLayout.Vertical ? VerticalMinimumWidth : HorizontalMinimumWidth) * scale;
+        var minHeight = (layout == BarLayout.Vertical ? VerticalMinimumHeight : HorizontalMinimumHeight) * scale;
+        double width;
+        double height;
+        double left;
+        double top;
+
+        if (layout == BarLayout.Vertical)
         {
-            Width = Math.Max(MinWidth, VerticalDefaultWidth * _appearanceSettings.Scale);
-            Height = Math.Max(MinHeight, VerticalDefaultHeight * _appearanceSettings.Scale);
-            WindowStartupLocation = WindowStartupLocation.Manual;
-            Left = workArea.Right - Width - ScreenEdgeMargin;
-            Top = workArea.Top + ScreenEdgeMargin;
-            ClampToWorkArea(workArea);
+            width = Math.Max(minWidth, VerticalDefaultWidth * scale);
+            height = Math.Max(minHeight, VerticalDefaultHeight * scale);
+            left = workArea.Right - width - ScreenEdgeMargin;
+            top = workArea.Top + ScreenEdgeMargin;
+            return ClampGeometry(workArea, left, top, width, height);
+        }
+
+        width = Math.Max(minWidth, workArea.Width * DefaultWidthRatio);
+        height = Math.Max(minHeight, DefaultHeight * scale);
+        left = workArea.Left + Math.Max(0, (workArea.Width - width) / 2);
+        top = workArea.Top + ScreenEdgeMargin;
+        return ClampGeometry(workArea, left, top, width, height);
+    }
+
+    private void ApplyGeometry((double Left, double Top, double Width, double Height) geometry)
+    {
+        WindowStartupLocation = WindowStartupLocation.Manual;
+
+        if (geometry.Width > Width)
+        {
+            Left = geometry.Left;
+            Top = geometry.Top;
+            Width = geometry.Width;
+            Height = geometry.Height;
             return;
         }
 
-        Width = Math.Max(MinWidth, workArea.Width * DefaultWidthRatio);
-        Height = Math.Max(MinHeight, DefaultHeight * _appearanceSettings.Scale);
-        WindowStartupLocation = WindowStartupLocation.Manual;
-        Left = workArea.Left + Math.Max(0, (workArea.Width - Width) / 2);
-        Top = workArea.Top + ScreenEdgeMargin;
-        ClampToWorkArea(workArea);
+        Width = geometry.Width;
+        Height = geometry.Height;
+        Left = geometry.Left;
+        Top = geometry.Top;
     }
 
     private Rect GetCurrentWorkArea()
@@ -356,22 +387,25 @@ public partial class MainWindow : Window
         return new Rect(topLeft, bottomRight);
     }
 
-    private void ClampToWorkArea(Rect workArea)
+    private static (double Left, double Top, double Width, double Height) ClampGeometry(
+        Rect workArea,
+        double left,
+        double top,
+        double width,
+        double height)
     {
-        var width = Math.Min(Math.Max(Width, MinWidth), workArea.Width);
-        var height = Math.Min(Math.Max(Height, MinHeight), workArea.Height);
-        Width = width;
-        Height = height;
-        Left = Math.Min(Math.Max(Left, workArea.Left), workArea.Right - width);
-        Top = Math.Min(Math.Max(Top, workArea.Top), workArea.Bottom - height);
+        width = Math.Min(width, workArea.Width);
+        height = Math.Min(height, workArea.Height);
+        left = Math.Min(Math.Max(left, workArea.Left), workArea.Right - width);
+        top = Math.Min(Math.Max(top, workArea.Top), workArea.Bottom - height);
+        return (left, top, width, height);
     }
 
     private void ApplyLayout()
     {
         var isVertical = _appearanceSettings.Layout == BarLayout.Vertical;
 
-        MinWidth = (isVertical ? VerticalMinimumWidth : HorizontalMinimumWidth) * _appearanceSettings.Scale;
-        MinHeight = (isVertical ? VerticalMinimumHeight : HorizontalMinimumHeight) * _appearanceSettings.Scale;
+        ApplyWindowConstraints(_appearanceSettings.Layout, _appearanceSettings.Scale);
         Shell.Padding = isVertical ? new Thickness(6) : new Thickness(11);
         LogoMark.Width = isVertical ? 24 : 28;
         LogoMark.Height = isVertical ? 24 : 28;
@@ -417,6 +451,13 @@ public partial class MainWindow : Window
         ManualText.TextAlignment = alignment;
         StateText.TextAlignment = alignment;
         ConfigText.TextAlignment = alignment;
+    }
+
+    private void ApplyWindowConstraints(BarLayout layout, double scale)
+    {
+        var isVertical = layout == BarLayout.Vertical;
+        MinWidth = (isVertical ? VerticalMinimumWidth : HorizontalMinimumWidth) * scale;
+        MinHeight = (isVertical ? VerticalMinimumHeight : HorizontalMinimumHeight) * scale;
     }
 
     private static void PositionPanel(Border panel, int row, int column, Thickness margin)
