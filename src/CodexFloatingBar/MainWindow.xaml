@@ -210,7 +210,6 @@
                             </Border>
                             <TextBlock x:Name="SecondaryUsageValue" Grid.Column="2" Style="{StaticResource ValueText}" />
                         </Grid>
-                        <TextBlock x:Name="UsagePlanText" Foreground="{DynamicResource MutedTextBrush}" FontSize="10" Margin="0,3,0,0" TextTrimming="CharacterEllipsis" />
                         <TextBlock x:Name="UsageUnavailableText" Style="{StaticResource ValueText}" Margin="0,2,0,0" Visibility="Collapsed" />
                     </StackPanel>
                 </Border>

@@ -12,10 +12,10 @@ namespace CodexFloatingBar;
 public partial class MainWindow : Window
 {
     private const double DefaultWidthRatio = 0.70;
-    private const double DefaultHeight = 108;
+    private const double DefaultHeight = 124;
     private const double ScreenEdgeMargin = 12;
     private const double HorizontalMinimumWidth = 560;
-    private const double HorizontalMinimumHeight = 84;
+    private const double HorizontalMinimumHeight = 102;
     private const double VerticalDefaultWidth = 170;
     private const double VerticalDefaultHeight = 340;
     private const double VerticalMinimumWidth = 132;
@@ -481,8 +481,8 @@ public partial class MainWindow : Window
         ConfigPanel.Visibility = Visibility.Collapsed;
         RuntimePanel.Visibility = Visibility.Visible;
         UsagePanel.Visibility = Visibility.Visible;
-        StatusColumn0.Width = isVertical ? new GridLength(1, GridUnitType.Star) : new GridLength(1.1, GridUnitType.Star);
-        StatusColumn1.Width = isVertical ? new GridLength(0) : new GridLength(1.25, GridUnitType.Star);
+        StatusColumn0.Width = isVertical ? new GridLength(1, GridUnitType.Star) : new GridLength(0.85, GridUnitType.Star);
+        StatusColumn1.Width = isVertical ? new GridLength(0) : new GridLength(1.45, GridUnitType.Star);
         StatusColumn2.Width = new GridLength(0);
         StatusRow0.Height = isVertical ? GridLength.Auto : new GridLength(1, GridUnitType.Star);
         StatusRow1.Height = isVertical ? GridLength.Auto : new GridLength(0);
@@ -498,7 +498,6 @@ public partial class MainWindow : Window
         RuntimeCaptionText.TextAlignment = alignment;
         UsageCaptionText.TextAlignment = alignment;
         StateText.TextAlignment = alignment;
-        UsagePlanText.TextAlignment = alignment;
         UsageUnavailableText.TextAlignment = alignment;
     }
 
@@ -594,9 +593,7 @@ public partial class MainWindow : Window
         var effort = DisplayValue(_currentReasoningEffort, "读取中");
         var speed = FormatSpeedLabel(_currentSpeedTier);
 
-        var text = _appearanceSettings.Layout == BarLayout.Vertical
-            ? $"模型{Environment.NewLine}{model}{Environment.NewLine}推理强度{Environment.NewLine}{effort}{Environment.NewLine}速率{Environment.NewLine}{speed}"
-            : $"模型 {model}  |  推理强度 {effort}  |  速率 {speed}";
+        var text = $"模型：{model}{Environment.NewLine}推理强度：{effort}{Environment.NewLine}速率：{speed}";
         SetTextIfChanged(StateText, text);
         RenderHeaderText();
     }
@@ -613,13 +610,13 @@ public partial class MainWindow : Window
             UsageUnavailableText.Visibility = Visibility.Collapsed;
             RenderUsageWindow(_currentUsageSummary.Primary, PrimaryUsageRow, PrimaryUsageFillColumn, PrimaryUsageEmptyColumn, PrimaryUsageLabel, PrimaryUsageValue);
             RenderUsageWindow(_currentUsageSummary.Secondary, SecondaryUsageRow, SecondaryUsageFillColumn, SecondaryUsageEmptyColumn, SecondaryUsageLabel, SecondaryUsageValue);
-            SetTextIfChanged(UsagePlanText, _currentUsageSummary.PlanType ?? string.Empty);
+            SetTextIfChanged(UsageCaptionText, FormatUsageCaption(_currentUsageSummary.PlanType));
             return;
         }
 
         RenderPlaceholderUsageWindow(PrimaryUsageRow, PrimaryUsageFillColumn, PrimaryUsageEmptyColumn, PrimaryUsageLabel, PrimaryUsageValue, "5 小时");
         RenderPlaceholderUsageWindow(SecondaryUsageRow, SecondaryUsageFillColumn, SecondaryUsageEmptyColumn, SecondaryUsageLabel, SecondaryUsageValue, "1 周");
-        SetTextIfChanged(UsagePlanText, string.Empty);
+        SetTextIfChanged(UsageCaptionText, "USAGE");
         SetTextIfChanged(UsageUnavailableText, FormatForLayout(_currentUsageStatus));
         UsageUnavailableText.Visibility = Visibility.Visible;
     }
@@ -692,6 +689,11 @@ public partial class MainWindow : Window
             "fast" or "priority" => "快速",
             _ => "标准"
         };
+    }
+
+    private static string FormatUsageCaption(string? planType)
+    {
+        return string.IsNullOrWhiteSpace(planType) ? "USAGE" : $"USAGE · {planType}";
     }
 
     private static string FormatWindowName(int windowMinutes)
