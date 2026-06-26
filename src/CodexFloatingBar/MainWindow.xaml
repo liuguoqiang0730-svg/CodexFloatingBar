@@ -93,7 +93,7 @@
             <DropShadowEffect Color="#000000" BlurRadius="18" ShadowDepth="0" Opacity="0.28" />
         </Border.Effect>
 
-        <Grid>
+        <Grid x:Name="MainContent">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="8" />

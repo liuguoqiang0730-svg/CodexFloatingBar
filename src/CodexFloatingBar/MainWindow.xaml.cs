@@ -20,6 +20,9 @@ public partial class MainWindow : Window
     private const double VerticalDefaultHeight = 340;
     private const double VerticalMinimumWidth = 132;
     private const double VerticalMinimumHeight = 220;
+    private const double CollapsedThickness = 18;
+    private const int AutoCollapseDelayMilliseconds = 1100;
+    private const int EdgeCollapseAnimationMilliseconds = 240;
     private const int LayoutTransitionMilliseconds = 120;
     private static readonly string ConfigPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex", "config.toml");
     private static readonly string CodexHomePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex");
@@ -32,6 +35,7 @@ public partial class MainWindow : Window
     private readonly DispatcherTimer _debounceTimer;
     private readonly DispatcherTimer _liveRefreshTimer;
     private readonly DispatcherTimer _usageTipTimer;
+    private readonly DispatcherTimer _autoCollapseTimer;
     private FileSystemWatcher? _configWatcher;
     private FileSystemWatcher? _rateLimitWatcher;
     private FileSystemWatcher? _stateWatcher;
@@ -46,7 +50,10 @@ public partial class MainWindow : Window
     private CodexRateLimitSummary? _currentUsageSummary;
     private UsageLevel? _primaryUsageLevel;
     private UsageLevel? _secondaryUsageLevel;
+    private (double Left, double Top, double Width, double Height)? _expandedGeometry;
     private int _refreshVersion;
+    private bool _isCollapsed;
+    private bool _suspendPlacementSave;
     private bool _allowClose;
 
     public MainWindow()
@@ -72,20 +79,30 @@ public partial class MainWindow : Window
             UpdateAccountIdentity();
             UpdateStatus();
             StartWatcher();
+            ScheduleAutoCollapse();
         };
 
         MouseLeftButtonDown += (_, e) =>
         {
+            if (_isCollapsed)
+            {
+                ExpandFromEdge();
+                return;
+            }
+
             if (e.ButtonState == MouseButtonState.Pressed)
             {
                 DragMove();
-                _placementService.Save(this);
+                SaveExpandedPlacement();
             }
         };
 
+        MouseEnter += (_, _) => ExpandFromEdge();
+        MouseLeave += (_, _) => ScheduleAutoCollapse();
+
         Closing += (_, e) =>
         {
-            _placementService.Save(this);
+            SaveExpandedPlacement();
             if (!_allowClose)
             {
                 e.Cancel = true;
@@ -93,7 +110,8 @@ public partial class MainWindow : Window
             }
         };
 
-        SizeChanged += (_, _) => _placementService.Save(this);
+        SizeChanged += (_, _) => SaveExpandedPlacement();
+        LocationChanged += (_, _) => SaveExpandedPlacement();
 
         _debounceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
         _debounceTimer.Tick += (_, _) =>
@@ -115,11 +133,20 @@ public partial class MainWindow : Window
             _usageTipTimer.Stop();
             HideUsageTip();
         };
+
+        _autoCollapseTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(AutoCollapseDelayMilliseconds) };
+        _autoCollapseTimer.Tick += (_, _) =>
+        {
+            _autoCollapseTimer.Stop();
+            CollapseToEdge();
+        };
     }
 
     internal AppearanceTheme CurrentTheme => _appearanceSettings.Theme;
 
     internal BarLayout CurrentLayout => _appearanceSettings.Layout;
+
+    internal bool AutoCollapseEnabled => _appearanceSettings.AutoCollapse;
 
     public double CurrentScale => _appearanceSettings.Scale;
 
@@ -132,6 +159,10 @@ public partial class MainWindow : Window
         _appearanceSettings = _appearanceSettings with { Theme = theme };
         _appearanceService.Save(_appearanceSettings);
         ApplyAppearance();
+        if (_isCollapsed)
+        {
+            ApplyCollapsedChrome();
+        }
     }
 
     public void SetScale(double scale)
@@ -141,7 +172,7 @@ public partial class MainWindow : Window
         _appearanceService.Save(_appearanceSettings);
         ApplyAppearance();
         ResizeForScale(oldScale, _appearanceSettings.Scale);
-        _placementService.Save(this);
+        SaveExpandedPlacement();
     }
 
     internal void SetLayout(BarLayout layout)
@@ -157,7 +188,23 @@ public partial class MainWindow : Window
         _appearanceSettings = targetSettings;
         _appearanceService.Save(_appearanceSettings);
         ApplyLayoutChange(layout, targetSettings.Scale, targetGeometry, animate: IsVisible);
-        _placementService.Save(this);
+        SaveExpandedPlacement();
+    }
+
+    internal void SetAutoCollapse(bool isEnabled)
+    {
+        _appearanceSettings = _appearanceSettings with { AutoCollapse = isEnabled };
+        _appearanceService.Save(_appearanceSettings);
+        ApplyLayout();
+
+        if (isEnabled)
+        {
+            ScheduleAutoCollapse();
+            return;
+        }
+
+        _autoCollapseTimer.Stop();
+        ExpandFromEdge();
     }
 
     public bool CopyStatusToClipboard()
@@ -190,6 +237,7 @@ public partial class MainWindow : Window
         }
 
         WindowState = WindowState.Normal;
+        ExpandFromEdge();
         Activate();
         Topmost = true;
         Topmost = false;
@@ -200,7 +248,7 @@ public partial class MainWindow : Window
     {
         if (IsVisible)
         {
-            _placementService.Save(this);
+            SaveExpandedPlacement();
             Hide();
             return;
         }
@@ -212,8 +260,190 @@ public partial class MainWindow : Window
 
     private void HideClicked(object sender, RoutedEventArgs e)
     {
-        _placementService.Save(this);
+        SaveExpandedPlacement();
         Hide();
+    }
+
+    private void ScheduleAutoCollapse()
+    {
+        if (!_appearanceSettings.AutoCollapse || _isCollapsed || !IsVisible)
+        {
+            return;
+        }
+
+        _autoCollapseTimer.Stop();
+        _autoCollapseTimer.Start();
+    }
+
+    private void CollapseToEdge()
+    {
+        if (!_appearanceSettings.AutoCollapse || _isCollapsed || IsMouseOver || !IsVisible || WindowState != WindowState.Normal)
+        {
+            return;
+        }
+
+        RememberExpandedGeometry();
+        var workArea = GetCurrentWorkArea();
+        var thickness = GetCollapsedThickness();
+        var isVertical = _appearanceSettings.Layout == BarLayout.Vertical;
+        var expanded = _expandedGeometry ?? (Left, Top, Width, Height);
+        (double Left, double Top, double Width, double Height) targetGeometry;
+
+        HideUsageTip();
+        _isCollapsed = true;
+        _suspendPlacementSave = true;
+        ResizeMode = ResizeMode.NoResize;
+        ApplyCollapsedChrome();
+
+        if (isVertical)
+        {
+            MinWidth = thickness;
+            MinHeight = thickness;
+            var targetHeight = Math.Min(Math.Max(expanded.Height, thickness), workArea.Height);
+            targetGeometry = (
+                workArea.Right - thickness,
+                Math.Min(Math.Max(expanded.Top, workArea.Top), workArea.Bottom - targetHeight),
+                thickness,
+                targetHeight);
+            AnimateWindowTo(targetGeometry, () => _suspendPlacementSave = false);
+            return;
+        }
+
+        MinWidth = thickness;
+        MinHeight = thickness;
+        var targetWidth = Math.Min(Math.Max(expanded.Width, HorizontalMinimumWidth * _appearanceSettings.Scale), workArea.Width);
+        targetGeometry = (
+            Math.Min(Math.Max(expanded.Left, workArea.Left), workArea.Right - targetWidth),
+            workArea.Top,
+            targetWidth,
+            thickness);
+        AnimateWindowTo(targetGeometry, () => _suspendPlacementSave = false);
+    }
+
+    private void ExpandFromEdge()
+    {
+        _autoCollapseTimer.Stop();
+        if (!_isCollapsed)
+        {
+            return;
+        }
+
+        var workArea = GetCurrentWorkArea();
+        var geometry = _expandedGeometry ?? GetDefaultGeometry(_appearanceSettings.Layout, _appearanceSettings.Scale, workArea);
+        var displayGeometry = GetEdgeExpandedGeometry(geometry, workArea);
+        _suspendPlacementSave = true;
+        AnimateWindowTo(displayGeometry, () =>
+        {
+            _isCollapsed = false;
+            ResizeMode = ResizeMode.CanResizeWithGrip;
+            MainContent.Visibility = Visibility.Visible;
+            Shell.Opacity = 1;
+            Shell.ToolTip = null;
+            ApplyWindowConstraints(_appearanceSettings.Layout, _appearanceSettings.Scale);
+            ApplyGeometry(displayGeometry);
+            ApplyAppearance();
+            RenderStatusText();
+            _suspendPlacementSave = false;
+        });
+    }
+
+    private void SaveExpandedPlacement()
+    {
+        if (_suspendPlacementSave || _isCollapsed || WindowState != WindowState.Normal || !IsFinite(Left) || !IsFinite(Top))
+        {
+            return;
+        }
+
+        RememberExpandedGeometry();
+        _placementService.Save(this);
+    }
+
+    private void RememberExpandedGeometry()
+    {
+        if (_isCollapsed || WindowState != WindowState.Normal || !IsFinite(Left) || !IsFinite(Top))
+        {
+            return;
+        }
+
+        _expandedGeometry = (Left, Top, Width, Height);
+    }
+
+    private double GetCollapsedThickness() => Math.Max(6, CollapsedThickness * _appearanceSettings.Scale);
+
+    private void AnimateWindowTo((double Left, double Top, double Width, double Height) geometry, Action? completed = null)
+    {
+        BeginAnimation(LeftProperty, null);
+        BeginAnimation(TopProperty, null);
+        BeginAnimation(WidthProperty, null);
+        BeginAnimation(HeightProperty, null);
+
+        var easing = new QuadraticEase { EasingMode = EasingMode.EaseOut };
+        var duration = TimeSpan.FromMilliseconds(EdgeCollapseAnimationMilliseconds);
+        var leftAnimation = CreateWindowAnimation(Left, geometry.Left, duration, easing);
+        var topAnimation = CreateWindowAnimation(Top, geometry.Top, duration, easing);
+        var widthAnimation = CreateWindowAnimation(Width, geometry.Width, duration, easing);
+        var heightAnimation = CreateWindowAnimation(Height, geometry.Height, duration, easing);
+
+        heightAnimation.Completed += (_, _) =>
+        {
+            BeginAnimation(LeftProperty, null);
+            BeginAnimation(TopProperty, null);
+            BeginAnimation(WidthProperty, null);
+            BeginAnimation(HeightProperty, null);
+            Left = geometry.Left;
+            Top = geometry.Top;
+            Width = geometry.Width;
+            Height = geometry.Height;
+            completed?.Invoke();
+        };
+
+        BeginAnimation(LeftProperty, leftAnimation, HandoffBehavior.SnapshotAndReplace);
+        BeginAnimation(TopProperty, topAnimation, HandoffBehavior.SnapshotAndReplace);
+        BeginAnimation(WidthProperty, widthAnimation, HandoffBehavior.SnapshotAndReplace);
+        BeginAnimation(HeightProperty, heightAnimation, HandoffBehavior.SnapshotAndReplace);
+    }
+
+    private static DoubleAnimation CreateWindowAnimation(double from, double to, TimeSpan duration, IEasingFunction easing)
+    {
+        return new DoubleAnimation
+        {
+            From = from,
+            To = to,
+            Duration = duration,
+            EasingFunction = easing,
+            FillBehavior = FillBehavior.Stop
+        };
+    }
+
+    private (double Left, double Top, double Width, double Height) GetEdgeExpandedGeometry(
+        (double Left, double Top, double Width, double Height) geometry,
+        Rect workArea)
+    {
+        if (_appearanceSettings.Layout == BarLayout.Vertical)
+        {
+            var width = Math.Min(Math.Max(geometry.Width, MinWidth), workArea.Width);
+            var height = Math.Min(Math.Max(geometry.Height, MinHeight), workArea.Height);
+            var left = workArea.Right - width;
+            var top = Math.Min(Math.Max(geometry.Top, workArea.Top), workArea.Bottom - height);
+            return (left, top, width, height);
+        }
+
+        var horizontalWidth = Math.Min(Math.Max(geometry.Width, MinWidth), workArea.Width);
+        var horizontalHeight = Math.Min(Math.Max(geometry.Height, MinHeight), workArea.Height);
+        var horizontalLeft = Math.Min(Math.Max(geometry.Left, workArea.Left), workArea.Right - horizontalWidth);
+        return (horizontalLeft, workArea.Top, horizontalWidth, horizontalHeight);
+    }
+
+    private void ApplyCollapsedChrome()
+    {
+        var isVertical = _appearanceSettings.Layout == BarLayout.Vertical;
+        MainContent.Visibility = Visibility.Collapsed;
+        Shell.Padding = new Thickness(0);
+        Shell.Opacity = 0.72;
+        Shell.ToolTip = "移到这里展开 Codex Status";
+        Shell.CornerRadius = isVertical
+            ? new CornerRadius(7, 0, 0, 7)
+            : new CornerRadius(0, 0, 7, 7);
     }
 
     private void ToggleThemeClicked(object sender, RoutedEventArgs e)

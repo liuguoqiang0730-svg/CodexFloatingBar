@@ -57,13 +57,17 @@ internal sealed class AppearanceService
         var theme = Enum.IsDefined(settings.Theme) ? settings.Theme : AppearanceTheme.Dark;
         var layout = Enum.IsDefined(settings.Layout) ? settings.Layout : BarLayout.Horizontal;
         var scale = Math.Clamp(settings.Scale, 0.82, 1.18);
-        return new AppearanceSettings(theme, scale, layout);
+        return new AppearanceSettings(theme, scale, layout, settings.AutoCollapse);
     }
 }
 
-internal sealed record AppearanceSettings(AppearanceTheme Theme, double Scale, BarLayout Layout = BarLayout.Horizontal)
+internal sealed record AppearanceSettings(
+    AppearanceTheme Theme,
+    double Scale,
+    BarLayout Layout = BarLayout.Horizontal,
+    bool AutoCollapse = false)
 {
-    public static AppearanceSettings Default { get; } = new(AppearanceTheme.Dark, 1.0, BarLayout.Horizontal);
+    public static AppearanceSettings Default { get; } = new(AppearanceTheme.Dark, 1.0, BarLayout.Horizontal, false);
 }
 
 internal enum AppearanceTheme

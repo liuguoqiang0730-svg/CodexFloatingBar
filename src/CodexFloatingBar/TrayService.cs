@@ -24,6 +24,7 @@ internal sealed class TrayService : IDisposable
     private readonly ToolStripMenuItem _scaleSmallMenuItem;
     private readonly ToolStripMenuItem _scaleNormalMenuItem;
     private readonly ToolStripMenuItem _scaleLargeMenuItem;
+    private readonly ToolStripMenuItem _autoCollapseMenuItem;
     private readonly ToolStripMenuItem _startupMenuItem;
     private readonly MainWindow _window;
 
@@ -73,6 +74,14 @@ internal sealed class TrayService : IDisposable
         scaleMenu.DropDownItems.Add(_scaleLargeMenuItem);
         menu.Items.Add(scaleMenu);
 
+        _autoCollapseMenuItem = new ToolStripMenuItem("自动收起")
+        {
+            CheckOnClick = false,
+            Checked = _window.AutoCollapseEnabled
+        };
+        _autoCollapseMenuItem.Click += (_, _) => InvokeOnUi(() => _window.SetAutoCollapse(!_window.AutoCollapseEnabled));
+        menu.Items.Add(_autoCollapseMenuItem);
+
         _startupMenuItem = new ToolStripMenuItem("开机自启动")
         {
             CheckOnClick = false,
@@ -121,6 +130,7 @@ internal sealed class TrayService : IDisposable
         _scaleSmallMenuItem.Checked = Math.Abs(_window.CurrentScale - 0.9) < 0.001;
         _scaleNormalMenuItem.Checked = Math.Abs(_window.CurrentScale - 1.0) < 0.001;
         _scaleLargeMenuItem.Checked = Math.Abs(_window.CurrentScale - 1.1) < 0.001;
+        _autoCollapseMenuItem.Checked = _window.AutoCollapseEnabled;
     }
 
     private void CopyStatus()
