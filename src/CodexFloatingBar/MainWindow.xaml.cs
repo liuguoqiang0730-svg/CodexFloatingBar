@@ -52,6 +52,7 @@ public partial class MainWindow : Window
     private UsageLevel? _secondaryUsageLevel;
     private (double Left, double Top, double Width, double Height)? _expandedGeometry;
     private int _refreshVersion;
+    private int _usageTipTestStep;
     private bool _isCollapsed;
     private bool _suspendPlacementSave;
     private bool _allowClose;
@@ -262,6 +263,31 @@ public partial class MainWindow : Window
     {
         SaveExpandedPlacement();
         Hide();
+    }
+
+    private void TestUsageTipClicked(object sender, RoutedEventArgs e)
+    {
+        ExpandFromEdge();
+        var step = _usageTipTestStep++ % 5;
+        switch (step)
+        {
+            case 0:
+                ShowUsageTip("5 小时", 49, UsageLevel.Warn);
+                break;
+            case 1:
+                ShowUsageTip("5 小时", 12, UsageLevel.Danger);
+                break;
+            case 2:
+                ShowUsageTip("1 周", 49, UsageLevel.Warn);
+                break;
+            case 3:
+                ShowUsageTip("1 周", 12, UsageLevel.Danger);
+                break;
+            default:
+                _usageTipTimer.Stop();
+                HideUsageTip();
+                break;
+        }
     }
 
     private void ScheduleAutoCollapse()
@@ -725,6 +751,9 @@ public partial class MainWindow : Window
         LayoutToggleButton.Width = isVertical ? 24 : 28;
         LayoutToggleButton.Height = isVertical ? 24 : 28;
         LayoutToggleButton.Margin = isVertical ? new Thickness(0, 0, 4, 0) : new Thickness(0, 0, 7, 0);
+        UsageTipTestButton.Width = isVertical ? 24 : 28;
+        UsageTipTestButton.Height = isVertical ? 24 : 28;
+        UsageTipTestButton.Margin = isVertical ? new Thickness(0, 0, 4, 0) : new Thickness(0, 0, 7, 0);
         HideButton.Width = isVertical ? 24 : 28;
         HideButton.Height = isVertical ? 24 : 28;
         HideButton.Margin = isVertical ? new Thickness(0, 0, 4, 0) : new Thickness(0, 0, 7, 0);
