@@ -39,6 +39,7 @@ public partial class MainWindow : Window
     private FileSystemWatcher? _configWatcher;
     private FileSystemWatcher? _rateLimitWatcher;
     private FileSystemWatcher? _stateWatcher;
+    private UsageToastWindow? _usageToastWindow;
     private AppearanceSettings _appearanceSettings = AppearanceSettings.Default;
     private string? _configuredModel;
     private string? _configuredReasoningEffort;
@@ -573,11 +574,6 @@ public partial class MainWindow : Window
         Resources[key] = new SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(color));
     }
 
-    private static SolidColorBrush CreateBrush(string color)
-    {
-        return new SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(color));
-    }
-
     private void ApplyDefaultSize(Rect? targetWorkArea = null)
     {
         var workArea = targetWorkArea ?? GetCurrentWorkArea();
@@ -785,19 +781,6 @@ public partial class MainWindow : Window
         UsageCaptionText.TextAlignment = alignment;
         StateText.TextAlignment = alignment;
         UsageUnavailableText.TextAlignment = alignment;
-        ApplyUsageTipLayout(isVertical);
-    }
-
-    private void ApplyUsageTipLayout(bool isVertical)
-    {
-        UsageTip.HorizontalAlignment = isVertical ? System.Windows.HorizontalAlignment.Stretch : System.Windows.HorizontalAlignment.Right;
-        UsageTip.VerticalAlignment = System.Windows.VerticalAlignment.Center;
-        UsageTip.MinWidth = isVertical ? 0 : 280;
-        UsageTip.MaxWidth = isVertical ? 180 : 380;
-        UsageTip.Margin = isVertical ? new Thickness(6, 0, 6, 0) : new Thickness(0, 0, 22, 0);
-        UsageTip.Padding = isVertical ? new Thickness(9, 8, 9, 8) : new Thickness(12, 10, 12, 10);
-        UsageTipTitle.FontSize = isVertical ? 11 : 13;
-        UsageTipText.FontSize = isVertical ? 10 : 12;
     }
 
     private void ApplyWindowConstraints(BarLayout layout, double scale)
@@ -1023,82 +1006,21 @@ public partial class MainWindow : Window
 
     private void ShowUsageTip(string label, int remainingPercent, UsageLevel level)
     {
-        UsageTip.BeginAnimation(OpacityProperty, null);
-        UsageTipScale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
-        UsageTipScale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
-
         var isDanger = level == UsageLevel.Danger;
-        UsageTipTitle.Text = isDanger ? $"{label}额度快用完了" : $"{label}额度低于 50%";
-        UsageTipText.Text = isDanger
+        var title = isDanger ? $"{label}额度快用完了" : $"{label}额度低于 50%";
+        var text = isDanger
             ? $"当前剩余 {remainingPercent}%，建议放慢使用或等待重置。"
             : $"当前剩余 {remainingPercent}%，用量进入提醒区间。";
-        ApplyUsageTipTone(isDanger);
-        UsageTip.Visibility = Visibility.Visible;
-        UsageTip.Opacity = 0;
-        UsageTipScale.ScaleX = 0.96;
-        UsageTipScale.ScaleY = 0.96;
 
-        UsageTip.BeginAnimation(
-            OpacityProperty,
-            new DoubleAnimation
-            {
-                From = 0,
-                To = 1,
-                Duration = TimeSpan.FromMilliseconds(140),
-                EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
-            },
-            HandoffBehavior.SnapshotAndReplace);
-        var scaleAnimation = new DoubleAnimation
-        {
-            From = 0.96,
-            To = 1,
-            Duration = TimeSpan.FromMilliseconds(180),
-            EasingFunction = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.18 }
-        };
-        UsageTipScale.BeginAnimation(ScaleTransform.ScaleXProperty, scaleAnimation, HandoffBehavior.SnapshotAndReplace);
-        UsageTipScale.BeginAnimation(ScaleTransform.ScaleYProperty, scaleAnimation, HandoffBehavior.SnapshotAndReplace);
-
+        _usageToastWindow ??= new UsageToastWindow();
+        _usageToastWindow.ShowToast(this, GetCurrentWorkArea(), title, text, isDanger);
         _usageTipTimer.Stop();
         _usageTipTimer.Start();
     }
 
-    private void ApplyUsageTipTone(bool isDanger)
-    {
-        if (isDanger)
-        {
-            UsageTip.Background = GetResourceBrush("UsageDangerBrush");
-            UsageTip.BorderBrush = CreateBrush("#B8FFFFFF");
-            UsageTipAccent.Background = CreateBrush("#FFFFFFFF");
-            UsageTipTitle.Foreground = CreateBrush("#FFFFFFFF");
-            UsageTipText.Foreground = CreateBrush("#F2FFFFFF");
-            return;
-        }
-
-        UsageTip.Background = GetResourceBrush("UsageWarnBrush");
-        UsageTip.BorderBrush = CreateBrush("#CC111827");
-        UsageTipAccent.Background = CreateBrush("#FF111827");
-        UsageTipTitle.Foreground = CreateBrush("#FF111827");
-        UsageTipText.Foreground = CreateBrush("#E6111827");
-    }
-
     private void HideUsageTip()
     {
-        var animation = new DoubleAnimation
-        {
-            From = UsageTip.Opacity,
-            To = 0,
-            Duration = TimeSpan.FromMilliseconds(180),
-            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseIn },
-            FillBehavior = FillBehavior.Stop
-        };
-
-        animation.Completed += (_, _) =>
-        {
-            UsageTip.Opacity = 0;
-            UsageTip.Visibility = Visibility.Collapsed;
-        };
-
-        UsageTip.BeginAnimation(OpacityProperty, animation, HandoffBehavior.SnapshotAndReplace);
+        _usageToastWindow?.HideToast();
     }
 
     private string FormatForLayout(string text)
@@ -1278,6 +1200,7 @@ public partial class MainWindow : Window
         _configWatcher?.Dispose();
         _rateLimitWatcher?.Dispose();
         _stateWatcher?.Dispose();
+        _usageToastWindow?.Close();
         base.OnClosed(e);
     }
 }

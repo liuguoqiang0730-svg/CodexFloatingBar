@@ -229,42 +229,6 @@
                         Opacity="0.45"
                         Margin="0,0,-6,-6" />
 
-            <Border x:Name="UsageTip"
-                    Grid.RowSpan="3"
-                    MinWidth="280"
-                    MaxWidth="380"
-                    HorizontalAlignment="Right"
-                    VerticalAlignment="Center"
-                    Margin="0,0,22,0"
-                    Padding="12,10"
-                    CornerRadius="10"
-                    Background="{DynamicResource CardBrush}"
-                    BorderBrush="{DynamicResource CardBorderBrush}"
-                    BorderThickness="2"
-                    Opacity="0"
-                    Visibility="Collapsed"
-                    IsHitTestVisible="False"
-                    RenderTransformOrigin="0.5,0.5"
-                    Panel.ZIndex="10">
-                <Border.Effect>
-                    <DropShadowEffect Color="#000000" BlurRadius="26" ShadowDepth="0" Opacity="0.36" />
-                </Border.Effect>
-                <Border.RenderTransform>
-                    <ScaleTransform x:Name="UsageTipScale" ScaleX="0.96" ScaleY="0.96" />
-                </Border.RenderTransform>
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="5" />
-                        <ColumnDefinition Width="10" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <Border x:Name="UsageTipAccent" Grid.Column="0" CornerRadius="2" Background="{DynamicResource UsageWarnBrush}" />
-                    <StackPanel Grid.Column="2">
-                        <TextBlock x:Name="UsageTipTitle" Foreground="{DynamicResource PrimaryTextBrush}" FontSize="13" FontWeight="Bold" TextTrimming="CharacterEllipsis" />
-                        <TextBlock x:Name="UsageTipText" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" Margin="0,3,0,0" TextWrapping="Wrap" />
-                    </StackPanel>
-                </Grid>
-            </Border>
         </Grid>
     </Border>
 </Window>
