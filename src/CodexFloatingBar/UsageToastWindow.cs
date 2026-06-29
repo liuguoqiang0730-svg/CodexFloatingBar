@@ -8,6 +8,8 @@ namespace CodexFloatingBar;
 
 internal sealed class UsageToastWindow : Window
 {
+    private const double ShadowPadding = 18;
+
     private readonly Border _shell;
     private readonly Border _accent;
     private readonly TextBlock _title;
@@ -24,8 +26,8 @@ internal sealed class UsageToastWindow : Window
         Topmost = true;
         SizeToContent = SizeToContent.WidthAndHeight;
         Focusable = false;
-        Width = 360;
-        MaxWidth = 380;
+        UseLayoutRounding = true;
+        SnapsToDevicePixels = true;
 
         _accent = new Border
         {
@@ -62,9 +64,12 @@ internal sealed class UsageToastWindow : Window
 
         _shell = new Border
         {
+            Width = 360,
+            MaxWidth = 380,
             Padding = new Thickness(12, 10, 12, 10),
             CornerRadius = new CornerRadius(10),
             BorderThickness = new Thickness(2),
+            SnapsToDevicePixels = true,
             RenderTransformOrigin = new System.Windows.Point(0.5, 0.5),
             RenderTransform = _scale,
             Effect = new DropShadowEffect
@@ -77,7 +82,14 @@ internal sealed class UsageToastWindow : Window
             Child = contentGrid
         };
 
-        Content = _shell;
+        var root = new Grid
+        {
+            Margin = new Thickness(ShadowPadding),
+            SnapsToDevicePixels = true
+        };
+        root.Children.Add(_shell);
+
+        Content = root;
         Opacity = 0;
     }
 
@@ -94,8 +106,8 @@ internal sealed class UsageToastWindow : Window
         }
 
         UpdateLayout();
-        Left = Math.Max(workArea.Left + 12, workArea.Right - ActualWidth - 24);
-        Top = Math.Max(workArea.Top + 12, workArea.Bottom - ActualHeight - 48);
+        Left = Math.Max(workArea.Left + 8, workArea.Right - ActualWidth - 8);
+        Top = Math.Max(workArea.Top + 8, workArea.Bottom - ActualHeight - 36);
 
         BeginAnimation(OpacityProperty, null);
         _scale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
