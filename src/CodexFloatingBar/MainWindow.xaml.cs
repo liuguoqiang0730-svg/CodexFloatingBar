@@ -804,8 +804,6 @@ public partial class MainWindow : Window
         Height = Math.Max(MinHeight, Height / oldScale * newScale);
     }
 
-    private Task UpdateLiveStatusAsync(int refreshVersion) => UpdateUsageAsync(refreshVersion);
-
     private void ApplySessionStatus(CodexSessionStatus session)
     {
         var model = string.IsNullOrWhiteSpace(session.Model) ? _configuredModel : session.Model;
@@ -1081,7 +1079,7 @@ public partial class MainWindow : Window
             _configuredSpeedTier = null;
             SetSelectedStatus("未找到配置", null, null);
             SetUsageStatus("读取中");
-            await UpdateUsageAsync(usageRefreshVersion);
+            await UpdateLiveStatusAsync(usageRefreshVersion);
             return;
         }
 
@@ -1092,7 +1090,7 @@ public partial class MainWindow : Window
             _configuredSpeedTier = null;
             SetSelectedStatus("读取配置失败", null, null);
             SetUsageStatus("读取中");
-            await UpdateUsageAsync(usageRefreshVersion);
+            await UpdateLiveStatusAsync(usageRefreshVersion);
             return;
         }
 
@@ -1101,19 +1099,28 @@ public partial class MainWindow : Window
         _configuredSpeedTier = result.SpeedTier;
         SetSelectedStatus(result.Model, result.ReasoningEffort, result.SpeedTier);
         SetUsageStatus("读取中");
-        await UpdateUsageAsync(usageRefreshVersion);
+        await UpdateLiveStatusAsync(usageRefreshVersion);
     }
 
-    private async Task UpdateUsageAsync(int refreshVersion)
+    private async Task UpdateLiveStatusAsync(int refreshVersion)
     {
-        var session = await _sessionStatusService.ReadLatestAsync();
-        var usage = await _rateLimitService.ReadLatestAsync();
+        var sessionTask = _sessionStatusService.ReadLatestAsync();
+        var usageTask = _rateLimitService.ReadLatestAsync();
+
+        var session = await sessionTask;
         if (refreshVersion != _refreshVersion)
         {
             return;
         }
 
         ApplySessionStatus(session);
+
+        var usage = await usageTask;
+        if (refreshVersion != _refreshVersion)
+        {
+            return;
+        }
+
         SetUsageStatus(usage);
     }
 
