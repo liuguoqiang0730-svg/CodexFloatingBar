@@ -7,6 +7,7 @@ internal sealed class CodexConfigService
 {
     private static readonly Regex ModelRegex = new("^\\s*model\\s*=\\s*['\\\"](?<value>[^'\\\"]+)['\\\"]\\s*$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private static readonly Regex EffortRegex = new("^\\s*model_reasoning_effort\\s*=\\s*['\\\"](?<value>[^'\\\"]+)['\\\"]\\s*$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex SpeedTierRegex = new("^\\s*(?:model_)?(?:service_tier|speed_tier)\\s*=\\s*['\\\"](?<value>[^'\\\"]+)['\\\"]\\s*$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     public ConfigReadResult Read(string path)
     {
@@ -17,6 +18,7 @@ internal sealed class CodexConfigService
 
         string? model = null;
         string? effort = null;
+        string? speedTier = null;
 
         try
         {
@@ -38,10 +40,20 @@ internal sealed class CodexConfigService
                     if (match.Success)
                     {
                         effort = match.Groups["value"].Value;
+                        continue;
                     }
                 }
 
-                if (model is not null && effort is not null)
+                if (speedTier is null)
+                {
+                    var match = SpeedTierRegex.Match(line);
+                    if (match.Success)
+                    {
+                        speedTier = match.Groups["value"].Value;
+                    }
+                }
+
+                if (model is not null && effort is not null && speedTier is not null)
                 {
                     break;
                 }
@@ -56,13 +68,13 @@ internal sealed class CodexConfigService
             return ConfigReadResult.Failed($"读取配置文件失败: {ex.Message}");
         }
 
-        return new ConfigReadResult(true, true, model, effort, null);
+        return new ConfigReadResult(true, true, model, effort, speedTier, null);
     }
 }
 
-internal sealed record ConfigReadResult(bool Exists, bool ReadSucceeded, string? Model, string? ReasoningEffort, string? Message)
+internal sealed record ConfigReadResult(bool Exists, bool ReadSucceeded, string? Model, string? ReasoningEffort, string? SpeedTier, string? Message)
 {
-    public static ConfigReadResult Missing(string message) => new(false, false, null, null, message);
+    public static ConfigReadResult Missing(string message) => new(false, false, null, null, null, message);
 
-    public static ConfigReadResult Failed(string message) => new(true, false, null, null, message);
+    public static ConfigReadResult Failed(string message) => new(true, false, null, null, null, message);
 }

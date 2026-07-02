@@ -26,6 +26,7 @@ public partial class MainWindow : Window
     private const int LayoutTransitionMilliseconds = 120;
     private static readonly string ConfigPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex", "config.toml");
     private static readonly string CodexHomePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex");
+    private static readonly string CodexSessionsPath = Path.Combine(CodexHomePath, "sessions");
     private readonly CodexAccountService _accountService = new();
     private readonly AppearanceService _appearanceService = new();
     private readonly CodexConfigService _configService = new();
@@ -38,11 +39,13 @@ public partial class MainWindow : Window
     private readonly DispatcherTimer _autoCollapseTimer;
     private FileSystemWatcher? _configWatcher;
     private FileSystemWatcher? _rateLimitWatcher;
+    private FileSystemWatcher? _sessionWatcher;
     private FileSystemWatcher? _stateWatcher;
     private UsageToastWindow? _usageToastWindow;
     private AppearanceSettings _appearanceSettings = AppearanceSettings.Default;
     private string? _configuredModel;
     private string? _configuredReasoningEffort;
+    private string? _configuredSpeedTier;
     private string? _currentModel;
     private string? _currentReasoningEffort;
     private string? _currentSpeedTier;
@@ -805,9 +808,10 @@ public partial class MainWindow : Window
 
     private void ApplySessionStatus(CodexSessionStatus session)
     {
-        var model = string.IsNullOrWhiteSpace(session.Model) ? _configuredModel : session.Model;
-        var effort = string.IsNullOrWhiteSpace(session.ReasoningEffort) ? _configuredReasoningEffort : session.ReasoningEffort;
-        var speedTier = string.IsNullOrWhiteSpace(session.SpeedTier) ? _currentSpeedTier : session.SpeedTier;
+        var model = string.IsNullOrWhiteSpace(_configuredModel) ? session.Model : _configuredModel;
+        var effort = string.IsNullOrWhiteSpace(_configuredReasoningEffort) ? session.ReasoningEffort : _configuredReasoningEffort;
+        var speedTier = _configuredSpeedTier;
+
         SetSelectedStatus(model, effort, speedTier);
     }
 
@@ -1008,9 +1012,15 @@ public partial class MainWindow : Window
 
     private static string FormatSpeedLabel(string? speedTier)
     {
-        return speedTier?.Trim().ToLowerInvariant() switch
+        if (string.IsNullOrWhiteSpace(speedTier))
+        {
+            return "未读取到";
+        }
+
+        return speedTier.Trim().ToLowerInvariant() switch
         {
             "fast" or "priority" => "快速",
+            "standard" or "default" or "auto" => "标准",
             _ => "标准"
         };
     }
@@ -1068,6 +1078,7 @@ public partial class MainWindow : Window
         {
             _configuredModel = null;
             _configuredReasoningEffort = null;
+            _configuredSpeedTier = null;
             SetSelectedStatus("未找到配置", null, null);
             SetUsageStatus("读取中");
             await UpdateUsageAsync(usageRefreshVersion);
@@ -1078,6 +1089,7 @@ public partial class MainWindow : Window
         {
             _configuredModel = null;
             _configuredReasoningEffort = null;
+            _configuredSpeedTier = null;
             SetSelectedStatus("读取配置失败", null, null);
             SetUsageStatus("读取中");
             await UpdateUsageAsync(usageRefreshVersion);
@@ -1086,7 +1098,8 @@ public partial class MainWindow : Window
 
         _configuredModel = result.Model;
         _configuredReasoningEffort = result.ReasoningEffort;
-        SetSelectedStatus(result.Model, result.ReasoningEffort, null);
+        _configuredSpeedTier = result.SpeedTier;
+        SetSelectedStatus(result.Model, result.ReasoningEffort, result.SpeedTier);
         SetUsageStatus("读取中");
         await UpdateUsageAsync(usageRefreshVersion);
     }
@@ -1137,6 +1150,20 @@ public partial class MainWindow : Window
         _rateLimitWatcher.Created += (_, _) => DebounceLiveRefresh();
         _rateLimitWatcher.Renamed += (_, _) => DebounceLiveRefresh();
 
+        if (Directory.Exists(CodexSessionsPath))
+        {
+            _sessionWatcher = new FileSystemWatcher(CodexSessionsPath, "*.jsonl")
+            {
+                IncludeSubdirectories = true,
+                NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size | NotifyFilters.FileName | NotifyFilters.CreationTime,
+                EnableRaisingEvents = true
+            };
+
+            _sessionWatcher.Changed += (_, _) => DebounceLiveRefresh();
+            _sessionWatcher.Created += (_, _) => DebounceLiveRefresh();
+            _sessionWatcher.Renamed += (_, _) => DebounceLiveRefresh();
+        }
+
         _stateWatcher = new FileSystemWatcher(CodexHomePath, "state_5.sqlite*")
         {
             NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size | NotifyFilters.FileName | NotifyFilters.CreationTime,
@@ -1170,6 +1197,7 @@ public partial class MainWindow : Window
     {
         _configWatcher?.Dispose();
         _rateLimitWatcher?.Dispose();
+        _sessionWatcher?.Dispose();
         _stateWatcher?.Dispose();
         _usageToastWindow?.Close();
         base.OnClosed(e);
