@@ -1,156 +1,78 @@
 # CodexFloatingBar
 
-[中文](#中文) | [English](#english)
-
 > Unofficial community tool. This project is not affiliated with, endorsed by, or maintained by OpenAI.
 
-## 中文
+CodexFloatingBar is a small Windows floating status bar for Codex users. It stays on your desktop and shows your current model, reasoning effort, speed tier, account, and local rate-limit status without opening logs or settings files.
 
-CodexFloatingBar 是一个用于 Windows 桌面的 Codex 本地状态悬浮条，基于 .NET 8 和 WPF 构建。它会读取当前 Windows 用户目录下的本地 Codex 配置和日志，在桌面上显示模型、推理强度、速率、账号信息以及 5 小时 / 1 周剩余额度。
+CodexFloatingBar 是一个给 Codex 用户用的 Windows 桌面悬浮状态条。它会读取本机 Codex 配置和日志，在桌面上显示当前模型、推理强度、速率、账号信息和 5 小时 / 1 周额度状态。
 
-### 功能
+![CodexFloatingBar screenshot](docs/assets/codex-floating-bar.png)
 
-- 无边框、置顶、可拖动的悬浮窗口
-- 横版 / 竖版布局，可一键切换
-- 黑色色调和灰白色色调，可一键切换
-- 支持窗口缩放、拖拽调整大小，并记住位置和尺寸
-- 横版默认贴近当前屏幕正上方居中，竖版默认贴近当前屏幕右上角
-- 悬浮条隐藏按钮，可从系统托盘恢复
-- 系统托盘菜单：刷新、复制状态、显示 / 隐藏、开机启动、账号相关链接、退出
-- 支持当前用户开机自启
-- 单实例保护，减少重复托盘图标
-- 读取 `%USERPROFILE%\.codex\config.toml` 中配置的 `model` 和 `model_reasoning_effort`
-- 优先从本地日志显示当前活跃 Codex 会话的模型、推理强度和速率
-- 从本地 ID token claims 显示 Codex 账号昵称 / 邮箱，不展示 token 原文
-- 从本地 `codex.rate_limits` 日志事件显示 5 小时和 1 周剩余额度
-- 用进度条显示剩余额度，并按绿色 / 黄色 / 红色提示额度状态
-- 监听本地 Codex 文件变化并自动刷新
+## Download
 
-### 读取的数据
+[Download for Windows x64](https://github.com/liuguoqiang0730-svg/CodexFloatingBar/releases/latest/download/CodexFloatingBar-v0.1.1-win-x64.exe)
 
-CodexFloatingBar 只读取当前 Windows 用户本机文件：
+Or open the [latest GitHub release](https://github.com/liuguoqiang0730-svg/CodexFloatingBar/releases/latest).
 
-- `%USERPROFILE%\.codex\config.toml`
-- `%USERPROFILE%\.codex\auth.json`
-- `%USERPROFILE%\.codex\logs_2.sqlite*`
-- `%USERPROFILE%\.codex\state_5.sqlite*`
+## Quick Start
 
-这些文件仅用于展示本地配置、账号身份、当前会话状态和剩余额度。应用不会上传数据，也不会发送遥测。
+1. Download `CodexFloatingBar-v0.1.1-win-x64.exe`.
+2. Run the file. No installer is required.
+3. Use the tray icon to refresh, hide/show, enable startup, switch layout, or exit.
 
-### 限制
+The app is currently unsigned, so Windows SmartScreen may warn that the publisher is unknown. That warning is about code-signing reputation, not a detected virus. The source code is public, and the release includes a checksum file for verification.
 
-- Codex / ChatGPT 目前没有为所有账号信息提供稳定的本地 API。
-- 余额和账单明细暂不从本地读取，请通过托盘菜单里的官方链接查看。
-- 剩余额度需要本地 Codex 客户端产生 `codex.rate_limits` 日志事件后才会显示。
-- 本地日志格式不是公开稳定协议，后续 Codex 客户端变化可能需要本项目适配。
+## Features
 
-### 运行要求
+- Always-on-top floating bar for Codex desktop status.
+- Horizontal and vertical layouts.
+- Dark and light themes.
+- Optional edge auto-collapse, controlled from the tray menu.
+- Shows configured model and reasoning effort from local Codex config.
+- Shows active session model, reasoning effort, and speed tier from local Codex logs when available.
+- Shows Codex account name/email from local token claims without displaying the token value.
+- Shows 5-hour and weekly remaining usage from local rate-limit log events.
+- Uses green, yellow, and red states for usage visibility.
+- Sends no telemetry and uploads no local Codex data.
 
-- Windows 10 或更高版本
-- 开发构建需要 .NET 8 SDK
+## 中文说明
 
-### 下载使用
+### 这个工具解决什么问题
 
-从 [Releases](https://github.com/liuguoqiang0730-svg/CodexFloatingBar/releases) 下载最新版本，解压后运行：
+使用 Codex 时，经常需要知道当前 session 用的是哪个模型、推理强度是多少、速率是什么、额度还剩多少。CodexFloatingBar 把这些信息放在一个小悬浮条里，适合一直放在桌面边缘查看。
 
-```text
-CodexFloatingBar.exe
-```
+### 安装和使用
 
-### 开发运行
+1. 从 [最新版本](https://github.com/liuguoqiang0730-svg/CodexFloatingBar/releases/latest) 下载 Windows x64 版本。
+2. 双击运行 `.exe`。
+3. 通过系统托盘菜单控制显示/隐藏、刷新、开机启动、横竖版切换和自动收起。
 
-```powershell
-dotnet run --project .\src\CodexFloatingBar\CodexFloatingBar.csproj
-```
+如果 Windows 提示未知发布者，是因为当前版本还没有代码签名证书。你可以查看源码，也可以用 release 里的 `SHA256SUMS.txt` 校验下载文件。
 
-### 构建
+### 读取哪些本地数据
 
-```powershell
-dotnet build .\CodexFloatingBar.sln
-```
-
-### 发布
-
-```powershell
-.\scripts\publish.ps1
-```
-
-默认发布输出目录：
-
-```text
-artifacts\publish\win-x64
-```
-
-发布脚本会创建或刷新桌面快捷方式 `CodexFloatingBar.lnk`，并指向发布后的可执行文件。
-
-如果 `dotnet` 不在 `PATH` 中，可以指定 SDK 路径：
-
-```powershell
-.\scripts\publish.ps1 -DotnetPath "C:\Path\To\dotnet.exe"
-```
-
-### 本地设置位置
-
-- 窗口位置：`%LOCALAPPDATA%\CodexFloatingBar\window-placement.json`
-- 外观设置：`%LOCALAPPDATA%\CodexFloatingBar\appearance.json`
-- 开机启动：`HKCU\Software\Microsoft\Windows\CurrentVersion\Run`
-
-### 许可证
-
-本项目使用 MIT License，详见 [LICENSE](LICENSE)。
-
-## English
-
-CodexFloatingBar is a Windows desktop floating bar for local Codex status. It is built with .NET 8 and WPF. The app reads local Codex configuration and log files from the current Windows user profile, then shows the selected model, reasoning effort, speed tier, account identity, and 5-hour / weekly remaining usage.
-
-### Features
-
-- Borderless, always-on-top, draggable floating window
-- Horizontal and vertical layouts with quick switching
-- Dark and gray-white themes with quick switching
-- Resizable window with persisted size and position
-- Desktop-friendly placement: horizontal mode anchors near the top center of the current screen; vertical mode anchors near the top right
-- Hide button on the floating bar, with restore from tray
-- Tray menu for refresh, copy status, show/hide, startup toggle, account links, and exit
-- Optional current-user startup registration
-- Single-instance guard to reduce duplicate tray icons
-- Reads configured `model` and `model_reasoning_effort` from `%USERPROFILE%\.codex\config.toml`
-- Shows the latest active Codex conversation model, reasoning effort, and speed tier from local logs when available
-- Shows Codex account display name/email from local ID-token claims without displaying token values
-- Shows Codex 5-hour and weekly remaining usage from local `codex.rate_limits` log events
-- Displays remaining usage as progress bars with green / yellow / red status colors
-- Watches local Codex files and refreshes status automatically
-
-### Data Read By The App
-
-CodexFloatingBar only reads local files from the current Windows user profile:
+CodexFloatingBar 只读取当前 Windows 用户目录下的本地 Codex 文件：
 
 - `%USERPROFILE%\.codex\config.toml`
 - `%USERPROFILE%\.codex\auth.json`
+- `%USERPROFILE%\.codex\sessions\**\*.jsonl`
 - `%USERPROFILE%\.codex\logs_2.sqlite*`
 - `%USERPROFILE%\.codex\state_5.sqlite*`
 
-The app uses these files to display local configuration, account identity, active session status, and remaining usage. It does not upload data or send telemetry.
+这些文件只用于显示本地配置、账号身份、当前 session 状态和剩余额度。应用不会上传数据，也不会发送遥测。
 
-### Limitations
+### 当前限制
 
-- Codex and ChatGPT do not currently provide a stable local API for every account detail.
-- Balance and billing details are not read locally; use the tray links to check official pages.
-- Remaining usage appears after the local Codex client receives `codex.rate_limits` events.
-- The local log format is not a public stability contract, so future Codex client changes may require updates.
+- Codex 本地日志格式不是公开稳定协议，未来 Codex 客户端变化后可能需要适配。
+- 额度提醒依赖本机 Codex session 日志里的 rate-limit 事件；如果本机还没有相关事件，状态会显示为读取中或暂无数据。
+- 当前 release 是免安装单文件版本，还没有安装器和代码签名。
+
+## Development
 
 ### Requirements
 
 - Windows 10 or later
-- .NET 8 SDK for development
-
-### Download
-
-Download the latest build from [Releases](https://github.com/liuguoqiang0730-svg/CodexFloatingBar/releases), extract it, then run:
-
-```text
-CodexFloatingBar.exe
-```
+- .NET 8 SDK
 
 ### Run From Source
 
@@ -184,12 +106,12 @@ To use a custom .NET SDK path:
 .\scripts\publish.ps1 -DotnetPath "C:\Path\To\dotnet.exe"
 ```
 
-### Local Settings
+## Local Settings
 
 - Window placement: `%LOCALAPPDATA%\CodexFloatingBar\window-placement.json`
 - Appearance settings: `%LOCALAPPDATA%\CodexFloatingBar\appearance.json`
 - Startup registration: `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`
 
-### License
+## License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE).
