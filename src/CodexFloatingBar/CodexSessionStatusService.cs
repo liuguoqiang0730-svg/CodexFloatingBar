@@ -1,5 +1,6 @@
 using System.IO;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace CodexFloatingBar;
@@ -20,6 +21,7 @@ internal sealed class CodexSessionStatusService
         "service_tier\\s*[=:]\\s*(?:Some\\((?<tier>[^)]+)\\)|(?<tier>[^\\s},]+))",
         RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private static readonly string CodexHome = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex");
+    private static readonly string SessionsPath = Path.Combine(CodexHome, "sessions");
     private static readonly string[] LogPaths =
     [
         Path.Combine(CodexHome, "logs_2.sqlite"),
@@ -33,8 +35,13 @@ internal sealed class CodexSessionStatusService
 
     private static CodexSessionStatus ReadLatest(CancellationToken cancellationToken)
     {
-        CodexSessionStatus latest = CodexSessionStatus.Unavailable;
+        var sessionStatus = ReadLatestSessionContext(cancellationToken);
+        if (sessionStatus is not null)
+        {
+            return sessionStatus;
+        }
 
+        CodexSessionStatus latest = CodexSessionStatus.Unavailable;
         foreach (var path in LogPaths)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -48,6 +55,144 @@ internal sealed class CodexSessionStatusService
         }
 
         return latest;
+    }
+
+    private static CodexSessionStatus? ReadLatestSessionContext(CancellationToken cancellationToken)
+    {
+        if (!Directory.Exists(SessionsPath))
+        {
+            return null;
+        }
+
+        try
+        {
+            foreach (var file in Directory
+                         .EnumerateFiles(SessionsPath, "*.jsonl", SearchOption.AllDirectories)
+                         .Select(path => new FileInfo(path))
+                         .OrderByDescending(file => file.LastWriteTimeUtc)
+                         .Take(12))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var status = FindLatestSessionContext(file.FullName);
+                if (status is not null)
+                {
+                    return status;
+                }
+            }
+        }
+        catch (IOException)
+        {
+            return null;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return null;
+        }
+
+        return null;
+    }
+
+    private static CodexSessionStatus? FindLatestSessionContext(string path)
+    {
+        var text = ReadTail(path);
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return null;
+        }
+
+        CodexSessionStatus? latest = null;
+        using var reader = new StringReader(text);
+        while (reader.ReadLine() is { } line)
+        {
+            var status = TryReadTurnContext(line);
+            if (status is not null)
+            {
+                latest = status;
+            }
+        }
+
+        return latest;
+    }
+
+    private static CodexSessionStatus? TryReadTurnContext(string line)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(line);
+            var root = document.RootElement;
+            if (!TryGetString(root, "type", out var type) || !string.Equals(type, "turn_context", StringComparison.Ordinal))
+            {
+                return null;
+            }
+
+            if (!root.TryGetProperty("payload", out var payload) || payload.ValueKind != JsonValueKind.Object)
+            {
+                return null;
+            }
+
+            payload.TryGetProperty("collaboration_mode", out var collaborationMode);
+            if (collaborationMode.ValueKind == JsonValueKind.Object)
+            {
+                collaborationMode.TryGetProperty("settings", out var settings);
+                if (settings.ValueKind == JsonValueKind.Object)
+                {
+                    var settingsModel = GetString(settings, "model");
+                    var settingsEffort = GetString(settings, "reasoning_effort");
+                    var settingsSpeedTier = GetString(settings, "service_tier") ?? GetString(settings, "speed_tier");
+                    return BuildStatus(
+                        settingsModel ?? GetString(payload, "model"),
+                        settingsEffort ?? GetString(payload, "reasoning_effort") ?? GetString(payload, "model_reasoning_effort"),
+                        settingsSpeedTier ?? GetString(payload, "service_tier") ?? GetString(payload, "speed_tier"));
+                }
+            }
+
+            return BuildStatus(
+                GetString(payload, "model"),
+                GetString(payload, "reasoning_effort") ?? GetString(payload, "model_reasoning_effort"),
+                GetString(payload, "service_tier") ?? GetString(payload, "speed_tier"));
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private static CodexSessionStatus? BuildStatus(string? model, string? effort, string? speedTier)
+    {
+        model = string.IsNullOrWhiteSpace(model) ? null : model.Trim();
+        effort = string.IsNullOrWhiteSpace(effort) ? null : FormatEffort(effort);
+        speedTier = string.IsNullOrWhiteSpace(speedTier) ? null : FormatSpeedTier(speedTier);
+        return string.IsNullOrWhiteSpace(model) && string.IsNullOrWhiteSpace(effort) && string.IsNullOrWhiteSpace(speedTier)
+            ? null
+            : new CodexSessionStatus(model, effort, speedTier);
+    }
+
+    private static string? GetString(JsonElement element, string propertyName)
+    {
+        return TryGetString(element, propertyName, out var value) ? value : null;
+    }
+
+    private static bool TryGetString(JsonElement element, string propertyName, out string? value)
+    {
+        value = null;
+        if (!element.TryGetProperty(propertyName, out var property))
+        {
+            return false;
+        }
+
+        if (property.ValueKind == JsonValueKind.String)
+        {
+            value = property.GetString();
+            return true;
+        }
+
+        if (property.ValueKind == JsonValueKind.Null)
+        {
+            return true;
+        }
+
+        value = property.ToString();
+        return true;
     }
 
     private static CodexSessionStatus? FindLatest(string text)

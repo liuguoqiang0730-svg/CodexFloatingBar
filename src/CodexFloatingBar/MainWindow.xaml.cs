@@ -808,9 +808,9 @@ public partial class MainWindow : Window
 
     private void ApplySessionStatus(CodexSessionStatus session)
     {
-        var model = string.IsNullOrWhiteSpace(_configuredModel) ? session.Model : _configuredModel;
-        var effort = string.IsNullOrWhiteSpace(_configuredReasoningEffort) ? session.ReasoningEffort : _configuredReasoningEffort;
-        var speedTier = _configuredSpeedTier;
+        var model = string.IsNullOrWhiteSpace(session.Model) ? _configuredModel : session.Model;
+        var effort = string.IsNullOrWhiteSpace(session.ReasoningEffort) ? _configuredReasoningEffort : session.ReasoningEffort;
+        var speedTier = string.IsNullOrWhiteSpace(session.SpeedTier) ? _configuredSpeedTier : session.SpeedTier;
 
         SetSelectedStatus(model, effort, speedTier);
     }
