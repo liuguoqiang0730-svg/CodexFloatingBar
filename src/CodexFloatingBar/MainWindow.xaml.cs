@@ -11,15 +11,15 @@ namespace CodexFloatingBar;
 
 public partial class MainWindow : Window
 {
-    private const double HorizontalDefaultWidth = 1104;
+    private const double HorizontalDefaultWidth = 1340;
     private const double DefaultHeight = 96;
     private const double ScreenEdgeMargin = 12;
-    private const double HorizontalMinimumWidth = 980;
+    private const double HorizontalMinimumWidth = 1340;
     private const double HorizontalMinimumHeight = 96;
     private const double VerticalDefaultWidth = 244;
-    private const double VerticalDefaultHeight = 468;
+    private const double VerticalDefaultHeight = 520;
     private const double VerticalMinimumWidth = 220;
-    private const double VerticalMinimumHeight = 430;
+    private const double VerticalMinimumHeight = 500;
     private const double CollapsedThickness = 18;
     private const int AutoCollapseDelayMilliseconds = 1100;
     private const int EdgeCollapseAnimationMilliseconds = 240;
@@ -73,6 +73,10 @@ public partial class MainWindow : Window
             ApplyDefaultSize();
         }
         else if (LooksLikeLegacyVerticalSize())
+        {
+            ApplyDefaultSize();
+        }
+        else if (LooksLikeOutdatedRestoredPlacement())
         {
             ApplyDefaultSize();
         }
@@ -467,7 +471,7 @@ public partial class MainWindow : Window
         if (_appearanceSettings.Theme == AppearanceTheme.Light)
         {
             ApplyTheme(
-                surface: "#F7F6F7F8",
+                surface: "#FFF6F7F8",
                 border: "#330F1720",
                 card: "#FFFFFFFF",
                 cardBorder: "#220F1720",
@@ -488,7 +492,7 @@ public partial class MainWindow : Window
         }
 
         ApplyTheme(
-            surface: "#F211161D",
+            surface: "#FF11161D",
             border: "#3AFFFFFF",
             card: "#171D24",
             cardBorder: "#263541",
@@ -737,7 +741,7 @@ public partial class MainWindow : Window
         RuntimePanel.Visibility = Visibility.Visible;
         UsagePanel.Visibility = Visibility.Visible;
         MainColumn0.Width = isVertical ? new GridLength(1, GridUnitType.Star) : GridLength.Auto;
-        MainColumn1.Width = isVertical ? new GridLength(0) : new GridLength(1, GridUnitType.Star);
+        MainColumn1.Width = isVertical ? new GridLength(0) : GridLength.Auto;
         MainColumn2.Width = isVertical ? new GridLength(0) : GridLength.Auto;
         MainRow0.Height = GridLength.Auto;
         MainRow1.Height = isVertical ? GridLength.Auto : new GridLength(0);
@@ -761,7 +765,7 @@ public partial class MainWindow : Window
         StatusRow1.Height = isVertical ? GridLength.Auto : new GridLength(0);
         StatusRow2.Height = new GridLength(0);
         StatusGrid.VerticalAlignment = isVertical ? VerticalAlignment.Top : VerticalAlignment.Stretch;
-        StatusGrid.HorizontalAlignment = isVertical ? System.Windows.HorizontalAlignment.Stretch : System.Windows.HorizontalAlignment.Center;
+        StatusGrid.HorizontalAlignment = isVertical ? System.Windows.HorizontalAlignment.Stretch : System.Windows.HorizontalAlignment.Left;
 
         PositionPanel(RuntimePanel, 0, 0, isVertical ? new Thickness(0, 0, 0, 18) : new Thickness(0, 0, 10, 0));
         PositionPanel(UsagePanel, isVertical ? 1 : 0, isVertical ? 0 : 1, new Thickness(0));
@@ -832,7 +836,27 @@ public partial class MainWindow : Window
 
         var unscaledWidth = Width / _appearanceSettings.Scale;
         var unscaledHeight = Height / _appearanceSettings.Scale;
-        return unscaledWidth > 240 || unscaledHeight > 520;
+        return unscaledWidth > VerticalDefaultWidth + 48 || unscaledHeight > VerticalDefaultHeight + 80;
+    }
+
+    private bool LooksLikeOutdatedRestoredPlacement()
+    {
+        var scale = _appearanceSettings.Scale <= 0 ? 1 : _appearanceSettings.Scale;
+        var unscaledWidth = Width / scale;
+        var unscaledHeight = Height / scale;
+
+        if (_appearanceSettings.Layout == BarLayout.Vertical)
+        {
+            return unscaledWidth < VerticalMinimumWidth
+                || unscaledHeight < VerticalMinimumHeight
+                || Math.Abs(unscaledWidth - VerticalDefaultWidth) > 44
+                || Math.Abs(unscaledHeight - VerticalDefaultHeight) > 92;
+        }
+
+        return unscaledWidth < HorizontalDefaultWidth - 1
+            || unscaledHeight < HorizontalMinimumHeight
+            || unscaledWidth > HorizontalDefaultWidth + 96
+            || unscaledHeight > DefaultHeight + 48;
     }
 
     private void ResizeForScale(double oldScale, double newScale)
