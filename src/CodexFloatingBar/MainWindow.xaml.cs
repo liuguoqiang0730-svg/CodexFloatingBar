@@ -12,14 +12,14 @@ namespace CodexFloatingBar;
 public partial class MainWindow : Window
 {
     private const double DefaultWidthRatio = 0.70;
-    private const double DefaultHeight = 124;
+    private const double DefaultHeight = 96;
     private const double ScreenEdgeMargin = 12;
-    private const double HorizontalMinimumWidth = 560;
-    private const double HorizontalMinimumHeight = 102;
-    private const double VerticalDefaultWidth = 170;
-    private const double VerticalDefaultHeight = 340;
-    private const double VerticalMinimumWidth = 132;
-    private const double VerticalMinimumHeight = 220;
+    private const double HorizontalMinimumWidth = 980;
+    private const double HorizontalMinimumHeight = 96;
+    private const double VerticalDefaultWidth = 244;
+    private const double VerticalDefaultHeight = 468;
+    private const double VerticalMinimumWidth = 220;
+    private const double VerticalMinimumHeight = 430;
     private const double CollapsedThickness = 18;
     private const int AutoCollapseDelayMilliseconds = 1100;
     private const int EdgeCollapseAnimationMilliseconds = 240;
@@ -52,7 +52,6 @@ public partial class MainWindow : Window
     private string _accountDisplayText = "账户读取中";
     private string _currentUsageStatus = "读取中";
     private CodexRateLimitSummary? _currentUsageSummary;
-    private UsageLevel? _primaryUsageLevel;
     private UsageLevel? _secondaryUsageLevel;
     private (double Left, double Top, double Width, double Height)? _expandedGeometry;
     private int _refreshVersion;
@@ -471,41 +470,41 @@ public partial class MainWindow : Window
                 surface: "#F7F6F7F8",
                 border: "#330F1720",
                 card: "#FFFFFFFF",
-                cardBorder: "#260F1720",
+                cardBorder: "#220F1720",
                 primaryText: "#FF111827",
                 secondaryText: "#D9111827",
-                mutedText: "#8A111827",
-                accent: "#315C6B",
-                accentHover: "#3B7284",
-                accentPressed: "#254956",
+                mutedText: "#8A4B5563",
+                accent: "#253241",
+                accentHover: "#314255",
+                accentPressed: "#1A2531",
                 usageGood: "#2E8B67",
                 usageWarn: "#C58B12",
                 usageDanger: "#C93F3F",
-                badge: "#0D111827",
-                logo: "#14315C6B",
-                logoBorder: "#33315C6B",
-                logoText: "#FF315C6B");
+                badge: "#1027333F",
+                logo: "#1436A370",
+                logoBorder: "#3336A370",
+                logoText: "#FF287A55");
             return;
         }
 
         ApplyTheme(
-            surface: "#F208090B",
-            border: "#35FFFFFF",
-            card: "#111317",
-            cardBorder: "#2EFFFFFF",
+            surface: "#F211161D",
+            border: "#3AFFFFFF",
+            card: "#171D24",
+            cardBorder: "#263541",
             primaryText: "#FFFFFFFF",
-            secondaryText: "#E0FFFFFF",
-            mutedText: "#9CFFFFFF",
-            accent: "#2E8B67",
-            accentHover: "#37A77B",
-            accentPressed: "#246F52",
-            usageGood: "#37A77B",
-            usageWarn: "#E0B341",
+            secondaryText: "#DCE6EF",
+            mutedText: "#98A7B5",
+            accent: "#1B2630",
+            accentHover: "#263645",
+            accentPressed: "#13202A",
+            usageGood: "#36A370",
+            usageWarn: "#C79522",
             usageDanger: "#E05252",
-            badge: "#20FFFFFF",
-            logo: "#1F2E8B67",
-            logoBorder: "#552E8B67",
-            logoText: "#FF85E0B9");
+            badge: "#27313A",
+            logo: "#16251F",
+            logoBorder: "#203D31",
+            logoText: "#FF77E0AD");
     }
 
     private void ApplyTheme(
@@ -711,50 +710,93 @@ public partial class MainWindow : Window
         var isVertical = _appearanceSettings.Layout == BarLayout.Vertical;
 
         ApplyWindowConstraints(_appearanceSettings.Layout, _appearanceSettings.Scale);
-        Shell.Padding = isVertical ? new Thickness(6) : new Thickness(11);
-        LogoMark.Width = isVertical ? 24 : 28;
-        LogoMark.Height = isVertical ? 24 : 28;
+        Shell.Padding = isVertical ? new Thickness(20) : new Thickness(20);
+        LogoMark.Width = 34;
+        LogoMark.Height = 34;
         ThemeToggleButton.Content = _appearanceSettings.Theme == AppearanceTheme.Dark ? "☼" : "●";
         ThemeToggleButton.ToolTip = _appearanceSettings.Theme == AppearanceTheme.Dark ? "切换灰白主题" : "切换黑色主题";
-        ThemeToggleButton.Width = isVertical ? 24 : 28;
-        ThemeToggleButton.Height = isVertical ? 24 : 28;
-        ThemeToggleButton.Margin = isVertical ? new Thickness(0, 0, 4, 0) : new Thickness(0, 0, 7, 0);
+        ThemeToggleButton.Width = 34;
+        ThemeToggleButton.Height = 34;
+        ThemeToggleButton.Margin = new Thickness(0, 0, 6, 0);
         LayoutToggleButton.Content = isVertical ? "↔" : "↕";
         LayoutToggleButton.ToolTip = isVertical ? "切换横版" : "切换竖版";
-        LayoutToggleButton.Width = isVertical ? 24 : 28;
-        LayoutToggleButton.Height = isVertical ? 24 : 28;
-        LayoutToggleButton.Margin = isVertical ? new Thickness(0, 0, 4, 0) : new Thickness(0, 0, 7, 0);
-        HideButton.Width = isVertical ? 24 : 28;
-        HideButton.Height = isVertical ? 24 : 28;
-        HideButton.Margin = isVertical ? new Thickness(0, 0, 4, 0) : new Thickness(0, 0, 7, 0);
-        RefreshButton.Width = isVertical ? 24 : 28;
-        RefreshButton.Height = isVertical ? 24 : 28;
-        AccountBadge.Visibility = isVertical ? Visibility.Collapsed : Visibility.Visible;
-        AccountBadge.MaxWidth = isVertical ? 0 : 420;
-        TitleStack.Visibility = isVertical ? Visibility.Collapsed : Visibility.Visible;
-        ModelText.Visibility = Visibility.Collapsed;
+        LayoutToggleButton.Width = 34;
+        LayoutToggleButton.Height = 34;
+        LayoutToggleButton.Margin = new Thickness(0, 0, 6, 0);
+        HideButton.Width = 34;
+        HideButton.Height = 34;
+        HideButton.Margin = new Thickness(0, 0, 6, 0);
+        RefreshButton.Width = 34;
+        RefreshButton.Height = 34;
+        AccountBadge.Visibility = Visibility.Collapsed;
+        TitleStack.Visibility = Visibility.Visible;
+        ModelText.Visibility = Visibility.Visible;
+        SetTextIfChanged(ModelText, "local status");
 
         ConfigPanel.Visibility = Visibility.Collapsed;
         RuntimePanel.Visibility = Visibility.Visible;
         UsagePanel.Visibility = Visibility.Visible;
-        StatusColumn0.Width = isVertical ? new GridLength(1, GridUnitType.Star) : new GridLength(0.85, GridUnitType.Star);
-        StatusColumn1.Width = isVertical ? new GridLength(0) : new GridLength(1.45, GridUnitType.Star);
+        MainColumn0.Width = isVertical ? new GridLength(1, GridUnitType.Star) : GridLength.Auto;
+        MainColumn1.Width = isVertical ? new GridLength(0) : new GridLength(1, GridUnitType.Star);
+        MainColumn2.Width = isVertical ? new GridLength(0) : GridLength.Auto;
+        MainRow0.Height = GridLength.Auto;
+        MainRow1.Height = isVertical ? GridLength.Auto : new GridLength(0);
+        MainRow2.Height = isVertical ? GridLength.Auto : new GridLength(0);
+
+        Grid.SetRow(BrandPanel, 0);
+        Grid.SetColumn(BrandPanel, 0);
+        Grid.SetRow(StatusGrid, isVertical ? 1 : 0);
+        Grid.SetColumn(StatusGrid, isVertical ? 0 : 1);
+        Grid.SetRow(ControlsPanel, isVertical ? 2 : 0);
+        Grid.SetColumn(ControlsPanel, isVertical ? 0 : 2);
+
+        BrandPanel.Margin = isVertical ? new Thickness(0, 0, 0, 22) : new Thickness(0, 0, 24, 0);
+        ControlsPanel.Margin = isVertical ? new Thickness(0, 24, 0, 0) : new Thickness(16, 0, 0, 0);
+        ControlsPanel.HorizontalAlignment = isVertical ? System.Windows.HorizontalAlignment.Center : System.Windows.HorizontalAlignment.Left;
+
+        StatusColumn0.Width = isVertical ? new GridLength(1, GridUnitType.Star) : GridLength.Auto;
+        StatusColumn1.Width = isVertical ? new GridLength(0) : GridLength.Auto;
         StatusColumn2.Width = new GridLength(0);
         StatusRow0.Height = isVertical ? GridLength.Auto : new GridLength(1, GridUnitType.Star);
         StatusRow1.Height = isVertical ? GridLength.Auto : new GridLength(0);
         StatusRow2.Height = new GridLength(0);
         StatusGrid.VerticalAlignment = isVertical ? VerticalAlignment.Top : VerticalAlignment.Stretch;
+        StatusGrid.HorizontalAlignment = isVertical ? System.Windows.HorizontalAlignment.Stretch : System.Windows.HorizontalAlignment.Center;
 
-        PositionPanel(RuntimePanel, 0, 0, isVertical ? new Thickness(0, 0, 0, 6) : new Thickness(0, 0, 7, 0));
+        PositionPanel(RuntimePanel, 0, 0, isVertical ? new Thickness(0, 0, 0, 18) : new Thickness(0, 0, 10, 0));
         PositionPanel(UsagePanel, isVertical ? 1 : 0, isVertical ? 0 : 1, new Thickness(0));
-        RuntimePanel.Padding = isVertical ? new Thickness(5) : new Thickness(8, 6, 8, 6);
-        UsagePanel.Padding = isVertical ? new Thickness(5) : new Thickness(8, 6, 8, 6);
+        UsagePanel.Padding = isVertical ? new Thickness(14, 10, 14, 12) : new Thickness(18, 7, 20, 7);
+        SecondaryUsageRow.MinWidth = isVertical ? 0 : 344;
+        UsagePanel.Width = isVertical ? double.NaN : 384;
+
+        ConfigureRuntimeLayout(isVertical);
 
         var alignment = isVertical ? TextAlignment.Center : TextAlignment.Left;
         RuntimeCaptionText.TextAlignment = alignment;
         UsageCaptionText.TextAlignment = alignment;
         StateText.TextAlignment = alignment;
         UsageUnavailableText.TextAlignment = alignment;
+    }
+
+    private void ConfigureRuntimeLayout(bool isVertical)
+    {
+        RuntimeColumn0.Width = isVertical ? new GridLength(1, GridUnitType.Star) : new GridLength(142);
+        RuntimeColumn1.Width = isVertical ? new GridLength(0) : new GridLength(96);
+        RuntimeColumn2.Width = isVertical ? new GridLength(0) : new GridLength(108);
+        RuntimeRow0.Height = GridLength.Auto;
+        RuntimeRow1.Height = isVertical ? GridLength.Auto : new GridLength(0);
+        RuntimeRow2.Height = isVertical ? GridLength.Auto : new GridLength(0);
+
+        PositionRuntimeChip(ModelChip, 0, 0, isVertical ? new Thickness(0, 0, 0, 10) : new Thickness(0, 0, 10, 0));
+        PositionRuntimeChip(EffortChip, isVertical ? 1 : 0, isVertical ? 0 : 1, isVertical ? new Thickness(0, 0, 0, 10) : new Thickness(0, 0, 10, 0));
+        PositionRuntimeChip(SpeedChip, isVertical ? 2 : 0, isVertical ? 0 : 2, new Thickness(0));
+    }
+
+    private static void PositionRuntimeChip(Border chip, int row, int column, Thickness margin)
+    {
+        Grid.SetRow(chip, row);
+        Grid.SetColumn(chip, column);
+        chip.Margin = margin;
     }
 
     private void ApplyWindowConstraints(BarLayout layout, double scale)
@@ -849,13 +891,16 @@ public partial class MainWindow : Window
         var speed = FormatSpeedLabel(_currentSpeedTier);
 
         var text = $"模型：{model}{Environment.NewLine}推理强度：{effort}{Environment.NewLine}速率：{speed}";
+        SetTextIfChanged(ModelValueText, model);
+        SetTextIfChanged(EffortValueText, FormatEffortLabel(effort));
+        SetTextIfChanged(SpeedValueText, speed);
         SetTextIfChanged(StateText, text);
         RenderHeaderText();
     }
 
     private void RenderHeaderText()
     {
-        SetTextIfChanged(ModelText, string.Empty);
+        SetTextIfChanged(ModelText, "local status");
     }
 
     private void RenderUsageStatus()
@@ -863,61 +908,43 @@ public partial class MainWindow : Window
         if (_currentUsageSummary?.Status == CodexRateLimitStatus.Available)
         {
             UsageUnavailableText.Visibility = Visibility.Collapsed;
-            RenderUsageWindow(_currentUsageSummary.Primary, PrimaryUsageRow, PrimaryUsageFillColumn, PrimaryUsageEmptyColumn, PrimaryUsageFill, PrimaryUsageLabel, PrimaryUsageValue);
-            RenderUsageWindow(_currentUsageSummary.Secondary, SecondaryUsageRow, SecondaryUsageFillColumn, SecondaryUsageEmptyColumn, SecondaryUsageFill, SecondaryUsageLabel, SecondaryUsageValue);
-            ObserveUsageLevelChange("5 小时", _currentUsageSummary.Primary, ref _primaryUsageLevel);
+            RenderWeeklyUsageWindow(_currentUsageSummary.Secondary, _currentUsageSummary.PlanType);
             ObserveUsageLevelChange("1 周", _currentUsageSummary.Secondary, ref _secondaryUsageLevel);
-            SetTextIfChanged(UsageCaptionText, FormatUsageCaption(_currentUsageSummary.PlanType));
             return;
         }
 
-        _primaryUsageLevel = null;
         _secondaryUsageLevel = null;
-        RenderPlaceholderUsageWindow(PrimaryUsageRow, PrimaryUsageFillColumn, PrimaryUsageEmptyColumn, PrimaryUsageFill, PrimaryUsageLabel, PrimaryUsageValue, "5 小时");
-        RenderPlaceholderUsageWindow(SecondaryUsageRow, SecondaryUsageFillColumn, SecondaryUsageEmptyColumn, SecondaryUsageFill, SecondaryUsageLabel, SecondaryUsageValue, "1 周");
-        SetTextIfChanged(UsageCaptionText, "USAGE");
+        RenderPlaceholderUsageWindow();
         SetTextIfChanged(UsageUnavailableText, FormatForLayout(_currentUsageStatus));
         UsageUnavailableText.Visibility = Visibility.Visible;
     }
 
-    private void RenderPlaceholderUsageWindow(
-        UIElement row,
-        ColumnDefinition fillColumn,
-        ColumnDefinition emptyColumn,
-        Border fill,
-        TextBlock label,
-        TextBlock value,
-        string text)
+    private void RenderPlaceholderUsageWindow()
     {
-        SetUsageWindowVisibility(row, true);
-        SetTextIfChanged(label, text);
-        SetTextIfChanged(value, "--");
-        SetUsageBarPercent(fillColumn, emptyColumn, 0);
-        fill.Background = GetResourceBrush("BadgeBrush");
-        row.SetValue(ToolTipProperty, "等待用量记录");
+        SetUsageWindowVisibility(SecondaryUsageRow, true);
+        SetTextIfChanged(UsageCaptionText, "一周额度");
+        SetTextIfChanged(UsageMetaText, "等待用量记录");
+        SetTextIfChanged(SecondaryUsageValue, "--");
+        SetUsageBarPercent(SecondaryUsageFillColumn, SecondaryUsageEmptyColumn, 0);
+        SecondaryUsageFill.Background = GetResourceBrush("BadgeBrush");
+        SecondaryUsageRow.SetValue(ToolTipProperty, "等待用量记录");
     }
 
-    private void RenderUsageWindow(
-        CodexRateLimitWindow? window,
-        UIElement row,
-        ColumnDefinition fillColumn,
-        ColumnDefinition emptyColumn,
-        Border fill,
-        TextBlock label,
-        TextBlock value)
+    private void RenderWeeklyUsageWindow(CodexRateLimitWindow? window, string? planType)
     {
         if (window is null)
         {
-            SetUsageWindowVisibility(row, false);
+            RenderPlaceholderUsageWindow();
             return;
         }
 
-        SetUsageWindowVisibility(row, true);
-        SetTextIfChanged(label, FormatWindowName(window.WindowMinutes));
-        SetTextIfChanged(value, $"{window.RemainingPercent}% · {FormatResetTime(window.ResetAt)}");
-        SetUsageBarPercent(fillColumn, emptyColumn, window.RemainingPercent);
-        fill.Background = GetUsageBrush(window.RemainingPercent);
-        row.SetValue(ToolTipProperty, $"剩余 {window.RemainingPercent}% / 已用 {window.UsedPercent}%");
+        SetUsageWindowVisibility(SecondaryUsageRow, true);
+        SetTextIfChanged(UsageCaptionText, "一周额度");
+        SetTextIfChanged(SecondaryUsageValue, $"{window.RemainingPercent}%");
+        SetTextIfChanged(UsageMetaText, FormatUsageMeta(planType, window.ResetAt));
+        SetUsageBarPercent(SecondaryUsageFillColumn, SecondaryUsageEmptyColumn, window.RemainingPercent);
+        SecondaryUsageFill.Background = GetUsageBrush(window.RemainingPercent);
+        SecondaryUsageRow.SetValue(ToolTipProperty, $"剩余 {window.RemainingPercent}% / 已用 {window.UsedPercent}%");
     }
 
     private static void SetUsageWindowVisibility(UIElement row, bool isVisible)
@@ -1008,6 +1035,20 @@ public partial class MainWindow : Window
         return string.IsNullOrWhiteSpace(value) ? fallback : value;
     }
 
+    private static string FormatEffortLabel(string? effort)
+    {
+        return effort?.Trim().ToLowerInvariant() switch
+        {
+            "none" => "无",
+            "minimal" => "极低",
+            "low" => "低",
+            "medium" => "中",
+            "high" => "高",
+            "xhigh" => "超高",
+            _ => string.IsNullOrWhiteSpace(effort) ? "读取中" : effort
+        };
+    }
+
     private static string FormatSpeedLabel(string? speedTier)
     {
         if (string.IsNullOrWhiteSpace(speedTier))
@@ -1023,9 +1064,10 @@ public partial class MainWindow : Window
         };
     }
 
-    private static string FormatUsageCaption(string? planType)
+    private static string FormatUsageMeta(string? planType, long resetAt)
     {
-        return string.IsNullOrWhiteSpace(planType) ? "USAGE" : $"USAGE · {planType}";
+        var resetText = $"{FormatResetTime(resetAt)}重置";
+        return string.IsNullOrWhiteSpace(planType) ? resetText : $"{planType} · {resetText}";
     }
 
     private static string FormatWindowName(int windowMinutes)

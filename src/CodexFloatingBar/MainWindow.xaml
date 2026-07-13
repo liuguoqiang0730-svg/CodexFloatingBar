@@ -15,23 +15,23 @@
         WindowStartupLocation="CenterScreen"
         FontFamily="Segoe UI">
     <Window.Resources>
-        <SolidColorBrush x:Key="SurfaceBrush" Color="#F20F1216" />
-        <SolidColorBrush x:Key="BorderBrushToken" Color="#2EFFFFFF" />
-        <SolidColorBrush x:Key="CardBrush" Color="#181D23" />
-        <SolidColorBrush x:Key="CardBorderBrush" Color="#22FFFFFF" />
+        <SolidColorBrush x:Key="SurfaceBrush" Color="#F211161D" />
+        <SolidColorBrush x:Key="BorderBrushToken" Color="#3AFFFFFF" />
+        <SolidColorBrush x:Key="CardBrush" Color="#171D24" />
+        <SolidColorBrush x:Key="CardBorderBrush" Color="#263541" />
         <SolidColorBrush x:Key="PrimaryTextBrush" Color="#FFFFFFFF" />
-        <SolidColorBrush x:Key="SecondaryTextBrush" Color="#D8FFFFFF" />
-        <SolidColorBrush x:Key="MutedTextBrush" Color="#98FFFFFF" />
-        <SolidColorBrush x:Key="AccentBrush" Color="#2F7D52" />
-        <SolidColorBrush x:Key="AccentHoverBrush" Color="#359764" />
-        <SolidColorBrush x:Key="AccentPressedBrush" Color="#256A45" />
-        <SolidColorBrush x:Key="UsageGoodBrush" Color="#2E8B67" />
-        <SolidColorBrush x:Key="UsageWarnBrush" Color="#D6A329" />
+        <SolidColorBrush x:Key="SecondaryTextBrush" Color="#DCE6EF" />
+        <SolidColorBrush x:Key="MutedTextBrush" Color="#98A7B5" />
+        <SolidColorBrush x:Key="AccentBrush" Color="#1B2630" />
+        <SolidColorBrush x:Key="AccentHoverBrush" Color="#263645" />
+        <SolidColorBrush x:Key="AccentPressedBrush" Color="#13202A" />
+        <SolidColorBrush x:Key="UsageGoodBrush" Color="#36A370" />
+        <SolidColorBrush x:Key="UsageWarnBrush" Color="#C79522" />
         <SolidColorBrush x:Key="UsageDangerBrush" Color="#D84A4A" />
-        <SolidColorBrush x:Key="BadgeBrush" Color="#1FFFFFFF" />
-        <SolidColorBrush x:Key="LogoBrush" Color="#22359764" />
-        <SolidColorBrush x:Key="LogoBorderBrush" Color="#55359764" />
-        <SolidColorBrush x:Key="LogoTextBrush" Color="#FF7DE3B2" />
+        <SolidColorBrush x:Key="BadgeBrush" Color="#27313A" />
+        <SolidColorBrush x:Key="LogoBrush" Color="#16251F" />
+        <SolidColorBrush x:Key="LogoBorderBrush" Color="#203D31" />
+        <SolidColorBrush x:Key="LogoTextBrush" Color="#FF77E0AD" />
 
         <Style x:Key="CaptionText" TargetType="TextBlock">
             <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
@@ -40,24 +40,38 @@
         </Style>
         <Style x:Key="ValueText" TargetType="TextBlock">
             <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
-            <Setter Property="FontSize" Value="12" />
-            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
             <Setter Property="ToolTip" Value="{Binding Text, RelativeSource={RelativeSource Self}}" />
+        </Style>
+        <Style x:Key="MetaText" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+            <Setter Property="ToolTip" Value="{Binding Text, RelativeSource={RelativeSource Self}}" />
+        </Style>
+        <Style x:Key="ChipPanel" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource CardBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="14,7" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
         </Style>
         <Style x:Key="StatusPanel" TargetType="Border">
             <Setter Property="Background" Value="{DynamicResource CardBrush}" />
             <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="7" />
-            <Setter Property="Padding" Value="8,6" />
-            <Setter Property="Margin" Value="0,0,7,0" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="18,7,20,7" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
         </Style>
         <Style TargetType="Button">
-            <Setter Property="Width" Value="28" />
-            <Setter Property="Height" Value="28" />
+            <Setter Property="Width" Value="34" />
+            <Setter Property="Height" Value="34" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Foreground" Value="#FFFFFFFF" />
+            <Setter Property="Foreground" Value="#FFE5EDF5" />
             <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
             <Setter Property="FontSize" Value="14" />
             <Setter Property="FontWeight" Value="SemiBold" />
@@ -65,7 +79,10 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="7">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{DynamicResource CardBorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="8">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                     </ControlTemplate>
@@ -83,11 +100,11 @@
     </Window.Resources>
 
     <Border x:Name="Shell"
-            CornerRadius="12"
+            CornerRadius="8"
             Background="{DynamicResource SurfaceBrush}"
             BorderBrush="{DynamicResource BorderBrushToken}"
             BorderThickness="1"
-            Padding="11"
+            Padding="20"
             SnapsToDevicePixels="True">
         <Border.Effect>
             <DropShadowEffect Color="#000000" BlurRadius="18" ShadowDepth="0" Opacity="0.28" />
@@ -95,137 +112,136 @@
 
         <Grid x:Name="MainContent">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="8" />
-                <RowDefinition Height="*" />
+                <RowDefinition x:Name="MainRow0" Height="Auto" />
+                <RowDefinition x:Name="MainRow1" Height="0" />
+                <RowDefinition x:Name="MainRow2" Height="0" />
             </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition x:Name="MainColumn0" Width="Auto" />
+                <ColumnDefinition x:Name="MainColumn1" Width="*" />
+                <ColumnDefinition x:Name="MainColumn2" Width="Auto" />
+            </Grid.ColumnDefinitions>
 
-            <Grid Grid.Row="0">
+            <Grid x:Name="BrandPanel" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,24,0">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <Border x:Name="LogoMark" Width="28" Height="28" CornerRadius="8" Background="{DynamicResource LogoBrush}" BorderBrush="{DynamicResource LogoBorderBrush}" BorderThickness="1">
-                    <TextBlock Text="C" Foreground="{DynamicResource LogoTextBrush}" FontWeight="Bold" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                <Border x:Name="LogoMark" Width="34" Height="34" CornerRadius="8" Background="{DynamicResource LogoBrush}" BorderBrush="{DynamicResource LogoBorderBrush}" BorderThickness="1">
+                    <TextBlock Text="C" Foreground="{DynamicResource LogoTextBrush}" FontWeight="Bold" FontSize="15" HorizontalAlignment="Center" VerticalAlignment="Center" />
                 </Border>
 
-                <StackPanel x:Name="TitleStack" Grid.Column="1" Margin="9,0,10,0" VerticalAlignment="Center">
-                    <TextBlock x:Name="TitleText" Foreground="{DynamicResource PrimaryTextBrush}" FontSize="13" FontWeight="SemiBold" Text="Codex Status" />
-                    <TextBlock x:Name="ModelText" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" Margin="0,1,0,0" TextTrimming="CharacterEllipsis" ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" />
+                <StackPanel x:Name="TitleStack" Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                    <TextBlock x:Name="TitleText" Foreground="{DynamicResource PrimaryTextBrush}" FontSize="14" FontWeight="SemiBold" Text="Codex" />
+                    <TextBlock x:Name="ModelText" Foreground="{DynamicResource MutedTextBrush}" FontSize="11" Margin="0,3,0,0" Text="local status" TextTrimming="CharacterEllipsis" />
                 </StackPanel>
-
-                <Border x:Name="AccountBadge"
-                        Grid.Column="2"
-                        Height="26"
-                        MaxWidth="420"
-                        CornerRadius="7"
-                        Background="{DynamicResource BadgeBrush}"
-                        BorderBrush="{DynamicResource CardBorderBrush}"
-                        BorderThickness="1"
-                        Padding="8,0"
-                        Margin="0,0,7,0"
-                        VerticalAlignment="Center">
-                    <TextBlock x:Name="AccountText"
-                               Foreground="{DynamicResource SecondaryTextBrush}"
-                               FontSize="11"
-                               VerticalAlignment="Center"
-                               TextTrimming="CharacterEllipsis"
-                               ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" />
-                </Border>
-
-                <Button x:Name="ThemeToggleButton" Grid.Column="3" Content="◐" ToolTip="切换主题" Click="ToggleThemeClicked" Margin="0,0,7,0" />
-
-                <Button x:Name="LayoutToggleButton" Grid.Column="4" Content="↕" ToolTip="切换横竖版" Click="ToggleLayoutClicked" Margin="0,0,7,0" />
-
-                <Button x:Name="HideButton" Grid.Column="5" Content="-" ToolTip="隐藏窗口" Click="HideClicked" Margin="0,0,7,0" />
-
-                <Button x:Name="RefreshButton" Grid.Column="6" Content="↻" ToolTip="Refresh" Click="RefreshClicked" />
             </Grid>
 
-            <Grid x:Name="StatusGrid" Grid.Row="2">
+            <Grid x:Name="StatusGrid" Grid.Row="0" Grid.Column="1" VerticalAlignment="Center">
                 <Grid.RowDefinitions>
-                    <RowDefinition x:Name="StatusRow0" Height="*" />
+                    <RowDefinition x:Name="StatusRow0" Height="Auto" />
                     <RowDefinition x:Name="StatusRow1" Height="0" />
                     <RowDefinition x:Name="StatusRow2" Height="0" />
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition x:Name="StatusColumn0" Width="1.35*" />
-                    <ColumnDefinition x:Name="StatusColumn1" Width="0.95*" />
-                    <ColumnDefinition x:Name="StatusColumn2" Width="1.45*" />
+                    <ColumnDefinition x:Name="StatusColumn0" Width="Auto" />
+                    <ColumnDefinition x:Name="StatusColumn1" Width="Auto" />
+                    <ColumnDefinition x:Name="StatusColumn2" Width="0" />
                 </Grid.ColumnDefinitions>
 
-                <Border x:Name="ConfigPanel" Grid.Row="0" Grid.Column="0" Style="{StaticResource StatusPanel}">
-                    <StackPanel VerticalAlignment="Stretch">
-                        <TextBlock x:Name="ConfigCaptionText" Style="{StaticResource CaptionText}" Text="CONFIG" />
-                        <TextBlock x:Name="ManualText" Style="{StaticResource ValueText}" Margin="0,2,0,0" />
-                    </StackPanel>
+                <Border x:Name="ConfigPanel" Visibility="Collapsed">
+                    <TextBlock x:Name="ManualText" />
                 </Border>
 
-                <Border x:Name="RuntimePanel" Grid.Row="0" Grid.Column="1" Style="{StaticResource StatusPanel}">
-                    <StackPanel VerticalAlignment="Stretch">
-                        <TextBlock x:Name="RuntimeCaptionText" Style="{StaticResource CaptionText}" Text="SESSION" />
-                        <TextBlock x:Name="StateText" Style="{StaticResource ValueText}" Margin="0,2,0,0" />
-                    </StackPanel>
+                <Border x:Name="RuntimePanel" Grid.Row="0" Grid.Column="0" Background="Transparent" Padding="0" Margin="0,0,10,0">
+                    <Grid x:Name="RuntimeGrid">
+                        <Grid.RowDefinitions>
+                            <RowDefinition x:Name="RuntimeRow0" Height="Auto" />
+                            <RowDefinition x:Name="RuntimeRow1" Height="0" />
+                            <RowDefinition x:Name="RuntimeRow2" Height="0" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition x:Name="RuntimeColumn0" Width="142" />
+                            <ColumnDefinition x:Name="RuntimeColumn1" Width="96" />
+                            <ColumnDefinition x:Name="RuntimeColumn2" Width="108" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border x:Name="ModelChip" Grid.Row="0" Grid.Column="0" Style="{StaticResource ChipPanel}" Margin="0,0,10,0">
+                            <StackPanel>
+                                <TextBlock Text="模型" Style="{StaticResource CaptionText}" />
+                                <TextBlock x:Name="ModelValueText" Style="{StaticResource ValueText}" Margin="0,4,0,0" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border x:Name="EffortChip" Grid.Row="0" Grid.Column="1" Style="{StaticResource ChipPanel}" Margin="0,0,10,0">
+                            <StackPanel>
+                                <TextBlock Text="推理" Style="{StaticResource CaptionText}" />
+                                <TextBlock x:Name="EffortValueText" Style="{StaticResource ValueText}" Margin="0,4,0,0" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border x:Name="SpeedChip" Grid.Row="0" Grid.Column="2" Style="{StaticResource ChipPanel}">
+                            <StackPanel>
+                                <TextBlock Text="速率" Style="{StaticResource CaptionText}" />
+                                <TextBlock x:Name="SpeedValueText" Style="{StaticResource ValueText}" Margin="0,4,0,0" />
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock x:Name="RuntimeCaptionText" Visibility="Collapsed" />
+                        <TextBlock x:Name="StateText" Visibility="Collapsed" />
+                    </Grid>
                 </Border>
 
-                <Border x:Name="UsagePanel" Grid.Row="0" Grid.Column="2" Style="{StaticResource StatusPanel}" Margin="0">
-                    <StackPanel VerticalAlignment="Stretch">
-                        <TextBlock x:Name="UsageCaptionText" Style="{StaticResource CaptionText}" Text="USAGE" />
-                        <Grid x:Name="PrimaryUsageRow" Margin="0,3,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock x:Name="PrimaryUsageLabel" Style="{StaticResource ValueText}" Text="5 小时" />
-                            <Border Grid.Column="1" Height="10" Margin="9,0" VerticalAlignment="Center" Background="{DynamicResource BadgeBrush}" CornerRadius="5" ClipToBounds="True">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition x:Name="PrimaryUsageFillColumn" Width="0*" />
-                                        <ColumnDefinition x:Name="PrimaryUsageEmptyColumn" Width="100*" />
-                                    </Grid.ColumnDefinitions>
-                                    <Border x:Name="PrimaryUsageFill" Grid.Column="0" Background="{DynamicResource UsageGoodBrush}" CornerRadius="5" />
-                                </Grid>
-                            </Border>
-                            <TextBlock x:Name="PrimaryUsageValue" Grid.Column="2" Style="{StaticResource ValueText}" />
-                        </Grid>
-                        <Grid x:Name="SecondaryUsageRow" Margin="0,7,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock x:Name="SecondaryUsageLabel" Style="{StaticResource ValueText}" Text="1 周" />
-                            <Border Grid.Column="1" Height="10" Margin="9,0" VerticalAlignment="Center" Background="{DynamicResource BadgeBrush}" CornerRadius="5" ClipToBounds="True">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition x:Name="SecondaryUsageFillColumn" Width="0*" />
-                                        <ColumnDefinition x:Name="SecondaryUsageEmptyColumn" Width="100*" />
-                                    </Grid.ColumnDefinitions>
-                                    <Border x:Name="SecondaryUsageFill" Grid.Column="0" Background="{DynamicResource UsageGoodBrush}" CornerRadius="5" />
-                                </Grid>
-                            </Border>
-                            <TextBlock x:Name="SecondaryUsageValue" Grid.Column="2" Style="{StaticResource ValueText}" />
-                        </Grid>
-                        <TextBlock x:Name="UsageUnavailableText" Style="{StaticResource ValueText}" Margin="0,2,0,0" Visibility="Collapsed" />
-                    </StackPanel>
+                <Border x:Name="UsagePanel" Grid.Row="0" Grid.Column="1" Style="{StaticResource StatusPanel}">
+                    <Grid x:Name="SecondaryUsageRow" MinWidth="344">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="18" />
+                            <RowDefinition Height="18" />
+                            <RowDefinition Height="12" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock x:Name="UsageCaptionText" Grid.Row="0" Grid.Column="0" Style="{StaticResource CaptionText}" Text="一周额度" />
+                        <TextBlock x:Name="SecondaryUsageValue" Grid.Row="0" Grid.Column="1" Style="{StaticResource ValueText}" FontSize="17" TextAlignment="Right" />
+                        <TextBlock x:Name="UsageMetaText" Grid.Row="1" Grid.ColumnSpan="2" Style="{StaticResource MetaText}" />
+                        <Border Grid.Row="2" Grid.ColumnSpan="2" Height="8" Margin="0,4,0,0" VerticalAlignment="Center" Background="{DynamicResource BadgeBrush}" CornerRadius="4" ClipToBounds="True">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition x:Name="SecondaryUsageFillColumn" Width="0*" />
+                                    <ColumnDefinition x:Name="SecondaryUsageEmptyColumn" Width="100*" />
+                                </Grid.ColumnDefinitions>
+                                <Border x:Name="SecondaryUsageFill" Grid.Column="0" Background="{DynamicResource UsageGoodBrush}" CornerRadius="4" />
+                            </Grid>
+                        </Border>
+                        <TextBlock x:Name="UsageUnavailableText" Grid.Row="0" Grid.RowSpan="4" Grid.ColumnSpan="2" Style="{StaticResource ValueText}" Visibility="Collapsed" VerticalAlignment="Center" />
+                    </Grid>
                 </Border>
             </Grid>
 
+            <StackPanel x:Name="ControlsPanel" Grid.Row="0" Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
+                <Button x:Name="ThemeToggleButton" Content="◐" ToolTip="切换主题" Click="ToggleThemeClicked" Margin="0,0,6,0" />
+                <Button x:Name="LayoutToggleButton" Content="↕" ToolTip="切换横竖版" Click="ToggleLayoutClicked" Margin="0,0,6,0" />
+                <Button x:Name="HideButton" Content="-" ToolTip="隐藏窗口" Click="HideClicked" Margin="0,0,6,0" />
+                <Button x:Name="RefreshButton" Content="↻" ToolTip="Refresh" Click="RefreshClicked" />
+            </StackPanel>
+
+            <Border x:Name="AccountBadge" Visibility="Collapsed">
+                <TextBlock x:Name="AccountText" />
+            </Border>
+
             <ResizeGrip Grid.RowSpan="3"
+                        Grid.ColumnSpan="3"
                         Width="18"
                         Height="18"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Bottom"
-                        Opacity="0.45"
-                        Margin="0,0,-6,-6" />
-
+                        Opacity="0.35"
+                        Margin="0,0,-14,-14" />
         </Grid>
     </Border>
 </Window>
