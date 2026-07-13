@@ -11,7 +11,7 @@ namespace CodexFloatingBar;
 
 public partial class MainWindow : Window
 {
-    private const double DefaultWidthRatio = 0.70;
+    private const double HorizontalDefaultWidth = 1104;
     private const double DefaultHeight = 96;
     private const double ScreenEdgeMargin = 12;
     private const double HorizontalMinimumWidth = 980;
@@ -574,7 +574,7 @@ public partial class MainWindow : Window
             return ClampGeometry(workArea, left, top, width, height);
         }
 
-        width = Math.Max(minWidth, workArea.Width * DefaultWidthRatio);
+        width = Math.Max(minWidth, Math.Min(HorizontalDefaultWidth * scale, workArea.Width));
         height = Math.Max(minHeight, DefaultHeight * scale);
         left = workArea.Left + Math.Max(0, (workArea.Width - width) / 2);
         top = workArea.Top + ScreenEdgeMargin;
