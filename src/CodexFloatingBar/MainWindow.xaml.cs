@@ -11,19 +11,20 @@ namespace CodexFloatingBar;
 
 public partial class MainWindow : Window
 {
-    private const double HorizontalDefaultWidth = 1340;
+    private const double HorizontalDefaultWidth = 1120;
     private const double DefaultHeight = 96;
     private const double ScreenEdgeMargin = 12;
-    private const double HorizontalMinimumWidth = 1340;
+    private const double HorizontalMinimumWidth = 1120;
     private const double HorizontalMinimumHeight = 96;
     private const double VerticalDefaultWidth = 244;
-    private const double VerticalDefaultHeight = 520;
-    private const double VerticalMinimumWidth = 220;
-    private const double VerticalMinimumHeight = 500;
+    private const double VerticalDefaultHeight = 472;
+    private const double VerticalMinimumWidth = 244;
+    private const double VerticalMinimumHeight = 456;
     private const double CollapsedThickness = 18;
     private const int AutoCollapseDelayMilliseconds = 1100;
     private const int EdgeCollapseAnimationMilliseconds = 240;
     private const int LayoutTransitionMilliseconds = 120;
+    private const double HorizontalControlsReservedWidth = 170;
     private static readonly string ConfigPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex", "config.toml");
     private static readonly string CodexHomePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex");
     private static readonly string CodexSessionsPath = Path.Combine(CodexHomePath, "sessions");
@@ -56,6 +57,7 @@ public partial class MainWindow : Window
     private (double Left, double Top, double Width, double Height)? _expandedGeometry;
     private int _refreshVersion;
     private bool _isCollapsed;
+    private bool _isFittingToContent;
     private bool _suspendPlacementSave;
     private bool _allowClose;
 
@@ -86,6 +88,7 @@ public partial class MainWindow : Window
             UpdateAccountIdentity();
             UpdateStatus();
             StartWatcher();
+            ScheduleFitExpandedWindowToContent();
             ScheduleAutoCollapse();
         };
 
@@ -350,6 +353,7 @@ public partial class MainWindow : Window
             ApplyGeometry(displayGeometry);
             ApplyAppearance();
             RenderStatusText();
+            ScheduleFitExpandedWindowToContent();
             _suspendPlacementSave = false;
         });
     }
@@ -604,6 +608,104 @@ public partial class MainWindow : Window
         Top = geometry.Top;
     }
 
+    private void ScheduleFitExpandedWindowToContent()
+    {
+        if (!IsLoaded || _isCollapsed)
+        {
+            return;
+        }
+
+        Dispatcher.BeginInvoke(FitExpandedWindowToContent, DispatcherPriority.ContextIdle);
+    }
+
+    private void FitExpandedWindowToContent()
+    {
+        if (_isCollapsed || _isFittingToContent || WindowState != WindowState.Normal || !IsVisible)
+        {
+            return;
+        }
+
+        var desired = MeasureExpandedContent();
+        if (desired is null)
+        {
+            return;
+        }
+
+        var width = Math.Ceiling(Math.Max(MinWidth, desired.Value.Width));
+        var height = Math.Ceiling(Math.Max(MinHeight, desired.Value.Height));
+        if (Math.Abs(Width - width) < 1 && Math.Abs(Height - height) < 1)
+        {
+            return;
+        }
+
+        var workArea = GetCurrentWorkArea();
+        var left = Left;
+        if (_appearanceSettings.Layout == BarLayout.Vertical && IsFinite(Left) && IsFinite(Width))
+        {
+            left = Left + Width - width;
+        }
+
+        var geometry = ClampGeometry(workArea, left, Top, width, height);
+        _isFittingToContent = true;
+        _suspendPlacementSave = true;
+        ApplyGeometry(geometry);
+        _suspendPlacementSave = false;
+        _isFittingToContent = false;
+        SaveExpandedPlacement();
+    }
+
+    private (double Width, double Height)? MeasureExpandedContent()
+    {
+        var infinite = new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity);
+        BrandPanel.Measure(infinite);
+        RuntimePanel.Measure(infinite);
+        UsagePanel.Measure(infinite);
+        ControlsPanel.Measure(infinite);
+
+        var padding = Shell.Padding;
+        if (_appearanceSettings.Layout == BarLayout.Vertical)
+        {
+            var width = padding.Left + padding.Right + Max(
+                TotalWidth(BrandPanel),
+                TotalWidth(RuntimePanel),
+                TotalWidth(UsagePanel),
+                TotalWidth(ControlsPanel));
+            var height = padding.Top + padding.Bottom
+                + TotalHeight(BrandPanel)
+                + TotalHeight(RuntimePanel)
+                + TotalHeight(UsagePanel)
+                + TotalHeight(ControlsPanel);
+            return IsFinite(width) && IsFinite(height) ? (width, height) : null;
+        }
+
+        var horizontalWidth = padding.Left + padding.Right
+            + TotalWidth(BrandPanel)
+            + TotalWidth(RuntimePanel)
+            + TotalWidth(UsagePanel)
+            + Math.Max(TotalWidth(ControlsPanel), HorizontalControlsReservedWidth);
+        var horizontalHeight = padding.Top + padding.Bottom + Max(
+            TotalHeight(BrandPanel),
+            TotalHeight(RuntimePanel),
+            TotalHeight(UsagePanel),
+            TotalHeight(ControlsPanel));
+        return IsFinite(horizontalWidth) && IsFinite(horizontalHeight) ? (horizontalWidth, horizontalHeight) : null;
+    }
+
+    private static double TotalWidth(FrameworkElement element)
+    {
+        return element.DesiredSize.Width + element.Margin.Left + element.Margin.Right;
+    }
+
+    private static double TotalHeight(FrameworkElement element)
+    {
+        return element.DesiredSize.Height + element.Margin.Top + element.Margin.Bottom;
+    }
+
+    private static double Max(params double[] values)
+    {
+        return values.Max();
+    }
+
     private void ApplyLayoutChange(
         BarLayout layout,
         double scale,
@@ -622,6 +724,7 @@ public partial class MainWindow : Window
         ApplyGeometry(geometry);
         ApplyAppearance();
         RenderStatusText();
+        ScheduleFitExpandedWindowToContent();
 
         if (animate)
         {
@@ -741,7 +844,7 @@ public partial class MainWindow : Window
         RuntimePanel.Visibility = Visibility.Visible;
         UsagePanel.Visibility = Visibility.Visible;
         MainColumn0.Width = isVertical ? new GridLength(1, GridUnitType.Star) : GridLength.Auto;
-        MainColumn1.Width = isVertical ? new GridLength(0) : GridLength.Auto;
+        MainColumn1.Width = isVertical ? new GridLength(0) : new GridLength(1, GridUnitType.Star);
         MainColumn2.Width = isVertical ? new GridLength(0) : GridLength.Auto;
         MainRow0.Height = GridLength.Auto;
         MainRow1.Height = isVertical ? GridLength.Auto : new GridLength(0);
@@ -849,13 +952,12 @@ public partial class MainWindow : Window
         {
             return unscaledWidth < VerticalMinimumWidth
                 || unscaledHeight < VerticalMinimumHeight
-                || Math.Abs(unscaledWidth - VerticalDefaultWidth) > 44
-                || Math.Abs(unscaledHeight - VerticalDefaultHeight) > 92;
+                || Math.Abs(unscaledWidth - VerticalDefaultWidth) > 12
+                || Math.Abs(unscaledHeight - VerticalDefaultHeight) > 20;
         }
 
-        return unscaledWidth < HorizontalDefaultWidth - 1
+        return Math.Abs(unscaledWidth - HorizontalDefaultWidth) > 20
             || unscaledHeight < HorizontalMinimumHeight
-            || unscaledWidth > HorizontalDefaultWidth + 96
             || unscaledHeight > DefaultHeight + 48;
     }
 
@@ -920,6 +1022,7 @@ public partial class MainWindow : Window
         SetTextIfChanged(SpeedValueText, speed);
         SetTextIfChanged(StateText, text);
         RenderHeaderText();
+        ScheduleFitExpandedWindowToContent();
     }
 
     private void RenderHeaderText()
@@ -934,6 +1037,7 @@ public partial class MainWindow : Window
             UsageUnavailableText.Visibility = Visibility.Collapsed;
             RenderWeeklyUsageWindow(_currentUsageSummary.Secondary, _currentUsageSummary.PlanType);
             ObserveUsageLevelChange("1 周", _currentUsageSummary.Secondary, ref _secondaryUsageLevel);
+            ScheduleFitExpandedWindowToContent();
             return;
         }
 
@@ -941,6 +1045,7 @@ public partial class MainWindow : Window
         RenderPlaceholderUsageWindow();
         SetTextIfChanged(UsageUnavailableText, FormatForLayout(_currentUsageStatus));
         UsageUnavailableText.Visibility = Visibility.Visible;
+        ScheduleFitExpandedWindowToContent();
     }
 
     private void RenderPlaceholderUsageWindow()
