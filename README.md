@@ -10,13 +10,13 @@ CodexFloatingBar 是一个给 Codex 用户用的 Windows 桌面悬浮状态条�
 
 ## Download
 
-[Download for Windows x64](https://github.com/liuguoqiang0730-svg/CodexFloatingBar/releases/latest/download/CodexFloatingBar-v0.1.1-win-x64.exe)
+[Download for Windows x64](https://github.com/liuguoqiang0730-svg/CodexFloatingBar/releases/latest/download/CodexFloatingBar-v0.1.2-win-x64.exe)
 
 Or open the [latest GitHub release](https://github.com/liuguoqiang0730-svg/CodexFloatingBar/releases/latest).
 
 ## Quick Start
 
-1. Download `CodexFloatingBar-v0.1.1-win-x64.exe`.
+1. Download `CodexFloatingBar-v0.1.2-win-x64.exe`.
 2. Run the file. No installer is required.
 3. Use the tray icon to refresh, hide/show, enable startup, switch layout, or exit.
 
