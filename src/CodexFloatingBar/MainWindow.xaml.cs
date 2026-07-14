@@ -880,7 +880,7 @@ public partial class MainWindow : Window
 
         var alignment = isVertical ? TextAlignment.Center : TextAlignment.Left;
         RuntimeCaptionText.TextAlignment = alignment;
-        UsageCaptionText.TextAlignment = alignment;
+        UsageCaptionText.TextAlignment = TextAlignment.Left;
         StateText.TextAlignment = alignment;
         UsageUnavailableText.TextAlignment = alignment;
     }
@@ -1034,9 +1034,10 @@ public partial class MainWindow : Window
     {
         if (_currentUsageSummary?.Status == CodexRateLimitStatus.Available)
         {
+            var weeklyWindow = GetWeeklyUsageWindow(_currentUsageSummary);
             UsageUnavailableText.Visibility = Visibility.Collapsed;
-            RenderWeeklyUsageWindow(_currentUsageSummary.Secondary, _currentUsageSummary.PlanType);
-            ObserveUsageLevelChange("1 周", _currentUsageSummary.Secondary, ref _secondaryUsageLevel);
+            RenderWeeklyUsageWindow(weeklyWindow, _currentUsageSummary.PlanType);
+            ObserveUsageLevelChange("1 周", weeklyWindow, ref _secondaryUsageLevel);
             ScheduleFitExpandedWindowToContent();
             return;
         }
@@ -1046,6 +1047,26 @@ public partial class MainWindow : Window
         SetTextIfChanged(UsageUnavailableText, FormatForLayout(_currentUsageStatus));
         UsageUnavailableText.Visibility = Visibility.Visible;
         ScheduleFitExpandedWindowToContent();
+    }
+
+    private static CodexRateLimitWindow? GetWeeklyUsageWindow(CodexRateLimitSummary usage)
+    {
+        if (IsWeeklyWindow(usage.Secondary))
+        {
+            return usage.Secondary;
+        }
+
+        if (IsWeeklyWindow(usage.Primary))
+        {
+            return usage.Primary;
+        }
+
+        return usage.Secondary ?? usage.Primary;
+    }
+
+    private static bool IsWeeklyWindow(CodexRateLimitWindow? window)
+    {
+        return window?.WindowMinutes == 10080;
     }
 
     private void RenderPlaceholderUsageWindow()
